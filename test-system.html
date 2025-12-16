@@ -1,0 +1,162 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <title>Santa Tracker System Test</title>
+    <style>
+        body { font-family: Arial, sans-serif; padding: 20px; background: #f0f8ff; }
+        .test-result { padding: 10px; margin: 5px 0; border-radius: 5px; }
+        .success { background: #d4edda; color: #155724; border: 1px solid #c3e6cb; }
+        .error { background: #f8d7da; color: #721c24; border: 1px solid #f5c6cb; }
+        .loading { background: #fff3cd; color: #856404; border: 1px solid #ffeaa7; }
+        button { padding: 10px 15px; background: #007bff; color: white; border: none; border-radius: 5px; cursor: pointer; margin: 5px; }
+        button:hover { background: #0056b3; }
+    </style>
+</head>
+<body>
+    <h1>🎅 Santa Tracker Configuration System Test</h1>
+
+    <div>
+        <button onclick="testConfigAPI()">Test Configuration API</button>
+        <button onclick="testModelSwitching()">Test Model Switching</button>
+        <button onclick="testSantaMessage()">Test Santa Message Generation</button>
+        <button onclick="testAll()">Run All Tests</button>
+    </div>
+
+    <div id="results"></div>
+
+    <script>
+        function addResult(message, isSuccess = true) {
+            const results = document.getElementById('results');
+            const div = document.createElement('div');
+            div.className = `test-result ${isSuccess ? 'success' : 'error'}`;
+            div.textContent = message;
+            results.appendChild(div);
+        }
+
+        function addLoading(message) {
+            const results = document.getElementById('results');
+            const div = document.createElement('div');
+            div.className = 'test-result loading';
+            div.textContent = message;
+            div.id = 'loading-' + Date.now();
+            results.appendChild(div);
+            return div.id;
+        }
+
+        function removeLoading(id) {
+            const element = document.getElementById(id);
+            if (element) element.remove();
+        }
+
+        async function testConfigAPI() {
+            const loadingId = addLoading('🔧 Testing Configuration API...');
+            try {
+                const response = await fetch('/api/config');
+                if (!response.ok) throw new Error(`HTTP ${response.status}`);
+
+                const config = await response.json();
+                removeLoading(loadingId);
+
+                if (config.aiProvider && config.prompts && config.server) {
+                    addResult('✅ Configuration API: WORKING - All sections present');
+                    addResult(`📊 Current model: ${config.aiProvider.defaultModel}`);
+                    addResult(`🔗 Ollama URL: ${config.aiProvider.url}`);
+                    addResult(`📝 Prompt templates: ${Object.keys(config.prompts).length} available`);
+                } else {
+                    addResult('❌ Configuration API: Missing required sections', false);
+                }
+            } catch (error) {
+                removeLoading(loadingId);
+                addResult(`❌ Configuration API: ERROR - ${error.message}`, false);
+            }
+        }
+
+        async function testModelSwitching() {
+            const loadingId = addLoading('🤖 Testing Model Switching...');
+            try {
+                // Get current model
+                const currentResponse = await fetch('/api/models/current');
+                const currentData = await currentResponse.json();
+                const originalModel = currentData.current_model;
+
+                // Test switch to same model (should succeed)
+                const switchResponse = await fetch('/api/models/switch', {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({ model: originalModel })
+                });
+
+                if (!switchResponse.ok) {
+                    const errorText = await switchResponse.text();
+                    throw new Error(`Switch failed: ${switchResponse.status} - ${errorText}`);
+                }
+
+                const switchData = await switchResponse.json();
+                removeLoading(loadingId);
+
+                if (switchData.status === 'success') {
+                    addResult('✅ Model Switching: WORKING - Successfully switched models');
+                    addResult(`🔄 Active model: ${originalModel}`);
+                } else {
+                    addResult(`❌ Model Switching: FAILED - ${switchData.message || 'Unknown error'}`, false);
+                }
+            } catch (error) {
+                removeLoading(loadingId);
+                addResult(`❌ Model Switching: ERROR - ${error.message}`, false);
+            }
+        }
+
+        async function testSantaMessage() {
+            const loadingId = addLoading('🎅 Testing Santa Message Generation...');
+            try {
+                const response = await fetch('/api/generate', {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({
+                        model: 'llama3.2',
+                        prompt: 'You are Santa! Say "Ho ho ho!" and wish someone a Merry Christmas in one sentence.',
+                        stream: false,
+                        options: {
+                            temperature: 0.8,
+                            num_predict: 50
+                        }
+                    })
+                });
+
+                if (!response.ok) {
+                    const errorText = await response.text();
+                    throw new Error(`Generation failed: ${response.status} - ${errorText}`);
+                }
+
+                const data = await response.json();
+                removeLoading(loadingId);
+
+                if (data.response && data.response.length > 0) {
+                    addResult('✅ Santa Message Generation: WORKING');
+                    addResult(`🎄 Generated message: "${data.response}"`);
+                    addResult(`⚡ Performance: ${data.eval_count || 'N/A'} tokens in ${Math.round((data.total_duration || 0) / 1000000)}ms`);
+                } else {
+                    addResult('❌ Santa Message Generation: No response generated', false);
+                }
+            } catch (error) {
+                removeLoading(loadingId);
+                addResult(`❌ Santa Message Generation: ERROR - ${error.message}`, false);
+            }
+        }
+
+        async function testAll() {
+            document.getElementById('results').innerHTML = '';
+            addResult('🚀 Starting comprehensive system test...', true);
+            await testConfigAPI();
+            await testModelSwitching();
+            await testSantaMessage();
+            addResult('🎯 System test completed!', true);
+        }
+
+        // Auto-run tests on page load
+        window.addEventListener('load', () => {
+            setTimeout(testAll, 500);
+        });
+    </script>
+</body>
+</html>

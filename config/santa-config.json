@@ -1,0 +1,75 @@
+{
+  "aiProvider": {
+    "type": "ollama",
+    "url": "http://localhost:11434",
+    "defaultModel": "llama3.2",
+    "availableModels": [
+      {
+        "name": "llama3.2",
+        "displayName": "Llama 3.2",
+        "description": "Fast and efficient for Santa messages",
+        "parameters": {
+          "temperature": 0.8,
+          "num_predict": 150,
+          "top_p": 0.9,
+          "top_k": 40
+        }
+      },
+      {
+        "name": "mistral",
+        "displayName": "Mistral 7B",
+        "description": "Creative storytelling model",
+        "parameters": {
+          "temperature": 0.9,
+          "num_predict": 200,
+          "top_p": 0.95,
+          "top_k": 50
+        }
+      },
+      {
+        "name": "phi",
+        "displayName": "Phi 3",
+        "description": "Compact and fast model",
+        "parameters": {
+          "temperature": 0.7,
+          "num_predict": 120,
+          "top_p": 0.8,
+          "top_k": 30
+        }
+      },
+      {
+        "name": "gemma",
+        "displayName": "Gemma 7B",
+        "description": "Google's efficient model",
+        "parameters": {
+          "temperature": 0.8,
+          "num_predict": 160,
+          "top_p": 0.9,
+          "top_k": 40
+        }
+      }
+    ]
+  },
+  "prompts": {
+    "preparing": "You are Santa Claus! Write a cheerful, warm message (2-3 sentences max) about preparing for Christmas Eve at the North Pole. The elves are busy wrapping presents. Be jolly, mention the reindeer if relevant, and keep it magical and brief. Use emojis sparingly (1-2 max). Don't use quotation marks.",
+    "delivering": "You are Santa Claus! Write a cheerful, warm message (2-3 sentences max) to someone tracking your journey. Santa is currently delivering presents around the world! {{DISTANCE_CONTEXT}} {{GIFTS_CONTEXT}} Be jolly, mention the reindeer if relevant, and keep it magical and brief. Use emojis sparingly (1-2 max). Don't use quotation marks.",
+    "finished": "You are Santa Claus! Write a cheerful, warm message (2-3 sentences max) about finishing Christmas deliveries and resting at the North Pole with the reindeer. Be jolly and keep it magical and brief. Use emojis sparingly (1-2 max). Don't use quotation marks."
+  },
+  "server": {
+    "port": 8000,
+    "corsEnabled": true,
+    "enableConfigEndpoints": true
+  },
+  "ui": {
+    "showConfigPanel": true,
+    "allowModelSwitching": true,
+    "allowPromptEditing": true,
+    "showAdvancedOptions": false
+  },
+  "features": {
+    "modelValidation": true,
+    "autoDiscoverModels": true,
+    "configAutoSave": true,
+    "promptTemplating": true
+  }
+}

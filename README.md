@@ -16,6 +16,22 @@ Track Santa's Christmas Eve journey around the world from YOUR exact location, w
 - ⏱️ **Live countdown** - See when Santa will reach your area
 - 🎁 **Gift counter** - Track how many presents Santa has delivered
 
+### 🔧 Enhanced Configuration System (NEW!)
+
+The Santa Tracker now includes a professional-grade configuration system:
+
+- ⚙️ **Zero-code model switching** - Switch between AI models instantly via web UI
+- 🎯 **Runtime configuration** - Change settings without restarting or editing code
+- 📝 **Template-based prompts** - Customize Santa's messages with dynamic variables
+- 🔍 **Auto model discovery** - Automatically detects available Ollama models
+- 🎚️ **Parameter tuning** - Adjust temperature, token limits, and other model parameters
+- 📊 **Configuration validation** - Prevents invalid settings with helpful error messages
+- 💾 **Import/Export configs** - Save and share configuration profiles
+- 🖥️ **Enhanced UI** - Professional configuration panel with real-time updates
+- 🔌 **RESTful API** - Programmatic configuration management
+
+**Quick Access**: Click the ⚙️ settings button in the enhanced interface to configure everything!
+
 ## 🎬 Demo
 
 ![Santa Tracker Demo](s1.png)
@@ -53,14 +69,23 @@ Santa's journey is calculated based on real Christmas Eve timing - he starts at 
    ollama serve
    ```
 
-4. **Start the web server**
+4. **Start the enhanced server** (recommended)
    ```bash
+   # Enhanced server with configuration APIs
+   python3 enhanced-server.py
+   ```
+
+   OR use the original server:
+   ```bash
+   # Original server (basic functionality)
    python3 server.py
    ```
 
 5. **Open in your browser**
-   
-   Navigate to: `http://localhost:8000/santa-tracker.html`
+
+   **Enhanced interface** (recommended): `http://localhost:8000/santa-tracker-enhanced.html`
+
+   **Original interface**: `http://localhost:8000/santa-tracker.html`
 
 ## 🎄 How It Works
 
@@ -171,25 +196,19 @@ The app is built with:
 - **Python 3** (built-in http.server)
 - **Ollama** (local LLM inference)
 
-### Modifying the AI Prompts
+### Configuration System
 
-Edit the `getSantaMessage` function in `santa-tracker.html`:
+**Enhanced Interface**: Use the ⚙️ settings button for all configuration!
 
-```javascript
-const prompt = `You are Santa Claus! Write a cheerful, warm message...`;
-```
+**Original Interface** - Manual code editing (legacy):
+- **Prompts**: Edit in `santa-tracker.html` → `getSantaMessage` function
+- **Models**: Change `model: "llama3.2"` to any Ollama model
 
-### Changing the AI Model
-
-Replace `llama3.2` with any Ollama-compatible model:
-
-```javascript
-body: JSON.stringify({
-  model: "llama3.2",  // Try: mistral, phi, gemma, etc.
-  prompt: prompt,
-  // ...
-})
-```
+**Advanced Configuration**: See [`CONFIGURATION_GUIDE.md`](CONFIGURATION_GUIDE.md) for:
+- API endpoints for programmatic configuration
+- Custom prompt templating with variables
+- Model parameter tuning
+- Configuration import/export
 
 ### Customizing Santa's Route
 
