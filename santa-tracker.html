@@ -3,366 +3,2643 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Santa Tracker - Local AI Edition</title>
+    <title>Santa Tracker - Enhanced Local AI Edition</title>
     <script crossorigin src="https://unpkg.com/react@18/umd/react.production.min.js"></script>
     <script crossorigin src="https://unpkg.com/react-dom@18/umd/react-dom.production.min.js"></script>
     <script src="https://unpkg.com/@babel/standalone/babel.min.js"></script>
     <script src="https://cdn.tailwindcss.com"></script>
+    <script src="https://unpkg.com/lucide@latest/dist/umd/lucide.js"></script>
     <style>
         @keyframes twinkle {
             0%, 100% { opacity: 0.3; }
             50% { opacity: 1; }
+        }
+
+        @keyframes giftDrop {
+            0% {
+                transform: translateY(-100vh) rotate(0deg) scale(0.8);
+                opacity: 0;
+                filter: blur(2px);
+            }
+            10% {
+                opacity: 1;
+                filter: blur(0px);
+                transform: translateY(-80vh) rotate(45deg) scale(1);
+            }
+            50% {
+                transform: translateY(30vh) rotate(180deg) scale(1.1);
+                opacity: 1;
+            }
+            70% {
+                transform: translateY(70vh) rotate(270deg) scale(1);
+                opacity: 1;
+            }
+            85% {
+                transform: translateY(85vh) rotate(360deg) scale(0.9);
+                opacity: 0.8;
+            }
+            100% {
+                transform: translateY(100vh) rotate(450deg) scale(0.7);
+                opacity: 0;
+            }
+        }
+
+        @keyframes giftBounce {
+            0% {
+                transform: translateY(0) scale(1);
+            }
+            15% {
+                transform: translateY(-20px) scale(1.1);
+            }
+            30% {
+                transform: translateY(0) scale(0.95);
+            }
+            45% {
+                transform: translateY(-10px) scale(1.05);
+            }
+            60% {
+                transform: translateY(0) scale(0.98);
+            }
+            75% {
+                transform: translateY(-5px) scale(1.02);
+            }
+            90% {
+                transform: translateY(0) scale(0.99);
+            }
+            100% {
+                transform: translateY(0) scale(1);
+            }
+        }
+
+        @keyframes giftSparkle {
+            0%, 100% {
+                transform: scale(0) rotate(0deg);
+                opacity: 0;
+            }
+            50% {
+                transform: scale(1) rotate(180deg);
+                opacity: 1;
+            }
+        }
+
+        @keyframes giftTrail {
+            0% {
+                transform: translateY(0) scale(1);
+                opacity: 0.8;
+            }
+            100% {
+                transform: translateY(20px) scale(0.3);
+                opacity: 0;
+            }
+        }
+
+        @keyframes magicalShimmer {
+            0% {
+                background-position: -200px 0;
+            }
+            100% {
+                background-position: 200px 0;
+            }
+        }
+
+        .gift-drop {
+            position: fixed;
+            font-size: 2rem;
+            animation: giftDrop 4s cubic-bezier(0.25, 0.46, 0.45, 0.94) forwards;
+            pointer-events: none;
+            z-index: 1000;
+            filter: drop-shadow(0 4px 8px rgba(0,0,0,0.2));
+        }
+
+        .gift-drop.special {
+            animation: giftDrop 5s cubic-bezier(0.25, 0.46, 0.45, 0.94) forwards;
+            font-size: 2.5rem;
+            filter: drop-shadow(0 6px 12px rgba(255,215,0,0.4));
+        }
+
+        .gift-landed {
+            position: fixed;
+            font-size: 1.5rem;
+            animation: giftBounce 1.5s cubic-bezier(0.68, -0.55, 0.265, 1.55);
+            pointer-events: none;
+            z-index: 1000;
+            filter: drop-shadow(0 2px 4px rgba(0,0,0,0.1));
+        }
+
+        .gift-sparkle {
+            position: fixed;
+            font-size: 1rem;
+            animation: giftSparkle 1s ease-in-out;
+            pointer-events: none;
+            z-index: 999;
+            color: gold;
+        }
+
+        .gift-trail {
+            position: fixed;
+            font-size: 1rem;
+            animation: giftTrail 0.8s ease-out forwards;
+            pointer-events: none;
+            z-index: 998;
+            opacity: 0.6;
+        }
+
+        .magical-shimmer {
+            background: linear-gradient(
+                90deg,
+                transparent,
+                rgba(255, 255, 255, 0.4),
+                transparent
+            );
+            background-size: 200px 100%;
+            animation: magicalShimmer 2s infinite;
         }
     </style>
 </head>
 <body>
     <div id="root"></div>
 
+    <!-- Load configuration modules as modules -->
+    <script type="module" src="js/SoundManager.js"></script>
+    <script type="module" src="js/LanguageManager.js"></script>
+    <script type="module" src="js/ReindeerManager.js"></script>
+    <script type="module" src="js/WeatherManager.js"></script>
+    <script type="module" src="js/ChimneySafetyManager.js"></script>
+    <script type="module">
+        // Import managers
+        import soundManager from './js/SoundManager.js';
+        import languageManager from './js/LanguageManager.js';
+        import reindeerManager from './js/ReindeerManager.js';
+        import weatherManager from './js/WeatherManager.js';
+        import chimneySafetyManager from './js/ChimneySafetyManager.js';
+
+        // Configuration Manager
+        class ConfigManager {
+            constructor() {
+                this.config = null;
+                this.listeners = [];
+                this.configPath = './config/santa-config.json';
+                this.isLoaded = false;
+            }
+
+            async load() {
+                try {
+                    const response = await fetch(this.configPath);
+                    if (!response.ok) {
+                        throw new Error(`Failed to load config: ${response.status}`);
+                    }
+
+                    this.config = await response.json();
+                    this.isLoaded = true;
+
+                    this.validateConfig();
+                    this.notifyListeners('config-loaded', this.config);
+
+                    console.log('✅ Configuration loaded successfully');
+                    return this.config;
+                } catch (error) {
+                    console.error('❌ Failed to load configuration:', error);
+                    this.loadDefaultConfig();
+                    throw error;
+                }
+            }
+
+            loadDefaultConfig() {
+                this.config = {
+                    aiProvider: {
+                        type: "ollama",
+                        url: "http://localhost:11434",
+                        defaultModel: "llama3.2",
+                        availableModels: [
+                            {
+                                name: "llama3.2",
+                                displayName: "Llama 3.2",
+                                description: "Default model",
+                                parameters: {
+                                    temperature: 0.8,
+                                    num_predict: 150
+                                }
+                            }
+                        ]
+                    },
+                    prompts: {
+                        preparing: "You are Santa Claus! Write a cheerful, warm message (2-3 sentences max) about preparing for Christmas Eve at the North Pole. The elves are busy wrapping presents. Be jolly, mention the reindeer if relevant, and keep it magical and brief. Use emojis sparingly (1-2 max). Don't use quotation marks.",
+                        delivering: "You are Santa Claus! Write a cheerful, warm message (2-3 sentences max) to someone tracking your journey. Santa is currently delivering presents around the world! {{DISTANCE_CONTEXT}} {{GIFTS_CONTEXT}} Be jolly, mention the reindeer if relevant, and keep it magical and brief. Use emojis sparingly (1-2 max). Don't use quotation marks.",
+                        finished: "You are Santa Claus! Write a cheerful, warm message (2-3 sentences max) about finishing Christmas deliveries and resting at the North Pole with the reindeer. Be jolly and keep it magical and brief. Use emojis sparingly (1-2 max). Don't use quotation marks."
+                    },
+                    server: {
+                        port: 8000,
+                        corsEnabled: true
+                    },
+                    ui: {
+                        showConfigPanel: true,
+                        allowModelSwitching: true,
+                        allowPromptEditing: true
+                    },
+                    features: {
+                        modelValidation: true,
+                        autoDiscoverModels: false,
+                        configAutoSave: true
+                    }
+                };
+
+                this.isLoaded = true;
+                console.log('⚠️ Using default configuration as fallback');
+            }
+
+            validateConfig() {
+                if (!this.config) {
+                    throw new Error('Configuration is null or undefined');
+                }
+
+                const requiredSections = ['aiProvider', 'prompts', 'server'];
+                for (const section of requiredSections) {
+                    if (!this.config[section]) {
+                        throw new Error(`Missing required configuration section: ${section}`);
+                    }
+                }
+
+                console.log('✅ Configuration validation passed');
+            }
+
+            get(path) {
+                if (!this.isLoaded) {
+                    throw new Error('Configuration not loaded. Call load() first.');
+                }
+
+                const keys = path.split('.');
+                let value = this.config;
+
+                for (const key of keys) {
+                    if (value && typeof value === 'object' && key in value) {
+                        value = value[key];
+                    } else {
+                        return undefined;
+                    }
+                }
+
+                return value;
+            }
+
+            set(path, value) {
+                if (!this.isLoaded) {
+                    throw new Error('Configuration not loaded. Call load() first.');
+                }
+
+                const keys = path.split('.');
+                const lastKey = keys.pop();
+                let target = this.config;
+
+                for (const key of keys) {
+                    if (!target[key] || typeof target[key] !== 'object') {
+                        target[key] = {};
+                    }
+                    target = target[key];
+                }
+
+                target[lastKey] = value;
+                this.notifyListeners('config-changed', { path, value, config: this.config });
+
+                if (this.get('features.configAutoSave')) {
+                    this.save();
+                }
+            }
+
+            getCurrentModel() {
+                const defaultModel = this.get('aiProvider.defaultModel');
+                const models = this.get('aiProvider.availableModels');
+                return models.find(model => model.name === defaultModel);
+            }
+
+            setCurrentModel(modelName) {
+                const models = this.get('aiProvider.availableModels');
+                const modelExists = models.some(model => model.name === modelName);
+
+                if (!modelExists) {
+                    throw new Error(`Model '${modelName}' not found in available models`);
+                }
+
+                this.set('aiProvider.defaultModel', modelName);
+                console.log(`✅ Changed current model to: ${modelName}`);
+            }
+
+            getAvailableModels() {
+                return this.get('aiProvider.availableModels') || [];
+            }
+
+            getPrompt(promptType) {
+                return this.get(`prompts.${promptType}`);
+            }
+
+            setPrompt(promptType, promptText) {
+                this.set(`prompts.${promptType}`, promptText);
+                console.log(`✅ Updated prompt: ${promptType}`);
+            }
+
+            addEventListener(event, callback) {
+                this.listeners.push({ event, callback });
+            }
+
+            removeEventListener(event, callback) {
+                this.listeners = this.listeners.filter(
+                    listener => !(listener.event === event && listener.callback === callback)
+                );
+            }
+
+            notifyListeners(event, data) {
+                this.listeners
+                    .filter(listener => listener.event === event)
+                    .forEach(listener => {
+                        try {
+                            listener.callback(data);
+                        } catch (error) {
+                            console.error('Error in config listener:', error);
+                        }
+                    });
+            }
+
+            getSummary() {
+                if (!this.isLoaded) {
+                    return 'Configuration not loaded';
+                }
+
+                const currentModel = this.getCurrentModel();
+                const modelCount = this.getAvailableModels().length;
+
+                return {
+                    isLoaded: this.isLoaded,
+                    currentModel: currentModel?.name || 'none',
+                    availableModels: modelCount,
+                    provider: this.get('aiProvider.type'),
+                    serverUrl: this.get('aiProvider.url'),
+                    features: this.get('features')
+                };
+            }
+
+            async save() {
+                try {
+                    console.log('💾 Configuration would be saved (server endpoint needed)');
+                } catch (error) {
+                    console.error('❌ Failed to save configuration:', error);
+                }
+            }
+        }
+
+        // Prompt Manager
+        class PromptManager {
+            constructor(configManager) {
+                this.configManager = configManager;
+                this.templateCache = {};
+                this.contextProviders = new Map();
+                this.defaultContext = {};
+            }
+
+            generatePrompt(promptType, context = {}) {
+                try {
+                    const template = this.configManager.getPrompt(promptType);
+                    if (!template) {
+                        throw new Error(`Prompt template '${promptType}' not found`);
+                    }
+
+                    const fullContext = this.buildFullContext(context);
+                    const prompt = this.interpolateTemplate(template, fullContext);
+
+                    console.log(`✅ Generated prompt for '${promptType}'`);
+                    return prompt;
+
+                } catch (error) {
+                    console.error(`❌ Failed to generate prompt '${promptType}':`, error);
+                    return this.getFallbackPrompt(promptType, context);
+                }
+            }
+
+            buildFullContext(userContext) {
+                const context = { ...this.defaultContext, ...userContext };
+
+                for (const [key, provider] of this.contextProviders) {
+                    try {
+                        if (typeof provider === 'function') {
+                            context[key] = provider();
+                        } else {
+                            context[key] = provider;
+                        }
+                    } catch (error) {
+                        console.warn(`Context provider '${key}' failed:`, error);
+                    }
+                }
+
+                return context;
+            }
+
+            interpolateTemplate(template, context) {
+                return template.replace(/\{\{([^}]+)\}\}/g, (match, variable) => {
+                    const trimmedVar = variable.trim();
+                    const value = this.getNestedProperty(context, trimmedVar);
+
+                    if (value !== undefined && value !== null) {
+                        return String(value);
+                    } else {
+                        console.warn(`Context variable '${trimmedVar}' not found, keeping placeholder`);
+                        return match;
+                    }
+                });
+            }
+
+            getNestedProperty(obj, path) {
+                return path.split('.').reduce((current, key) => {
+                    return current && current[key] !== undefined ? current[key] : undefined;
+                }, obj);
+            }
+
+            getSantaTimeContext() {
+                const now = new Date();
+                const christmasEve = new Date(now.getFullYear(), 11, 24, 18, 0, 0);
+                const christmasDay = new Date(now.getFullYear(), 11, 25, 6, 0, 0);
+
+                let phase = 'preparing';
+                if (now >= christmasEve && now < christmasDay) {
+                    phase = 'delivering';
+                } else if (now >= christmasDay) {
+                    phase = 'finished';
+                }
+
+                return {
+                    phase,
+                    isChristmasEve: now >= christmasEve && now < christmasDay,
+                    isChristmasDay: now >= christmasDay,
+                    isPreChristmas: now < christmasEve,
+                    currentTime: now.toISOString(),
+                    timeUntilChristmas: Math.max(0, christmasEve.getTime() - now.getTime()),
+                    dayOfYear: Math.floor((now - new Date(now.getFullYear(), 0, 0)) / 86400000)
+                };
+            }
+
+            buildSantaContext(santaStats, userLocation) {
+                const timeContext = this.getSantaTimeContext();
+
+                let distanceContext = '';
+                let giftsContext = '';
+
+                if (santaStats) {
+                    if (santaStats.distance) {
+                        distanceContext = `He is about ${santaStats.distance.toLocaleString()} km away from the user's location.`;
+                    }
+
+                    if (santaStats.giftsDelivered && santaStats.giftsDelivered > 0) {
+                        giftsContext = `He has delivered ${santaStats.giftsDelivered.toLocaleString()} gifts so far!`;
+                    }
+                }
+
+                return {
+                    ...timeContext,
+                    DISTANCE_CONTEXT: distanceContext,
+                    GIFTS_CONTEXT: giftsContext,
+                    USER_LOCATION: userLocation ? `${userLocation.lat.toFixed(2)}, ${userLocation.lon.toFixed(2)}` : 'unknown',
+                    SANTA_STATUS: santaStats?.status || 'unknown'
+                };
+            }
+
+            generateSantaMessage(santaStats, userLocation) {
+                const context = this.buildSantaContext(santaStats, userLocation);
+                const promptType = context.phase;
+
+                return this.generatePrompt(promptType, context);
+            }
+
+            getFallbackPrompt(promptType, context) {
+                const fallbacks = {
+                    preparing: "Ho ho ho! I'm busy preparing for Christmas Eve at the North Pole! The elves and I are working hard to make this Christmas magical! 🎅",
+                    delivering: "Ho ho ho! I'm on my way around the world delivering presents! Keep being good and I might visit your area soon! 🎁",
+                    finished: "Ho ho ho! What a wonderful Christmas that was! All the presents have been delivered and I'm back home with the reindeer! 🎄"
+                };
+
+                return fallbacks[promptType] || "Ho ho ho! Merry Christmas from Santa! 🎅";
+            }
+
+            registerContextProvider(key, provider) {
+                this.contextProviders.set(key, provider);
+                console.log(`✅ Registered context provider: ${key}`);
+            }
+        }
+
+        // Create global instances
+        const configManager = new ConfigManager();
+        const promptManager = new PromptManager(configManager);
+
+        // Register default context providers
+        promptManager.registerContextProvider('timestamp', () => new Date().toISOString());
+        promptManager.registerContextProvider('year', () => new Date().getFullYear());
+        promptManager.registerContextProvider('santaTime', () => promptManager.getSantaTimeContext());
+
+        // Auto-load configuration
+        configManager.load().catch(error => {
+            console.warn('Failed to auto-load configuration on startup:', error.message);
+        });
+
+        // Make available globally
+        window.configManager = configManager;
+        window.promptManager = promptManager;
+        window.languageManager = languageManager;
+        window.reindeerManager = reindeerManager;
+        window.weatherManager = weatherManager;
+        window.chimneySafetyManager = chimneySafetyManager;
+    </script>
+
     <script type="text/babel">
         const { useState, useEffect } = React;
+        const { Settings, AlertTriangle, MapPin, Clock, Gift, X, Globe, Heart, Trash2, Users, Cloud, CloudRain, Sun, Wind, Thermometer, Eye, Shield, CheckCircle, Home } = lucide;
 
-        function SantaTracker() {
-          const [userLocation, setUserLocation] = useState(null);
-          const [locationPermission, setLocationPermission] = useState('prompt');
-          const [currentTime, setCurrentTime] = useState(new Date());
-          const [santaStats, setSantaStats] = useState(null);
-          const [santaMessage, setSantaMessage] = useState('');
-          const [loadingMessage, setLoadingMessage] = useState(false);
+        // Reindeer Panel component
+        function ReindeerPanel({ isVisible, onClose, reindeerTeam, teamStatus }) {
+            if (!isVisible) return null;
 
-          useEffect(() => {
-            const timer = setInterval(() => setCurrentTime(new Date()), 1000);
-            return () => clearInterval(timer);
-          }, []);
+            const formation = window.reindeerManager.getReindeerFormation();
 
-          useEffect(() => {
-            if (userLocation) {
-              calculateSantaProgress();
-            }
-          }, [userLocation, currentTime]);
+            return (
+                <div className="fixed inset-0 bg-black bg-opacity-50 z-50 flex items-center justify-center p-4">
+                    <div className="bg-white rounded-xl shadow-2xl max-w-4xl w-full max-h-[85vh] overflow-hidden">
+                        <div className="bg-gradient-to-r from-red-600 to-green-600 text-white p-6 flex items-center justify-between rounded-t-xl">
+                            <h2 className="text-xl font-bold">🦌 Santa's Reindeer Team</h2>
+                            <button
+                                onClick={() => onClose(false)}
+                                className="text-white hover:text-gray-200 transition-colors"
+                            >
+                                <X size={24} />
+                            </button>
+                        </div>
 
-          const requestLocation = () => {
-            if (navigator.geolocation) {
-              navigator.geolocation.getCurrentPosition(
-                (position) => {
-                  setUserLocation({
-                    lat: position.coords.latitude,
-                    lon: position.coords.longitude
-                  });
-                  setLocationPermission('granted');
-                },
-                (error) => {
-                  console.error('Location error:', error);
-                  setLocationPermission('denied');
-                }
-              );
-            }
-          };
+                        <div className="p-6 overflow-y-auto max-h-[70vh]">
+                            {/* Team Status Overview */}
+                            <div className="grid grid-cols-1 md:grid-cols-3 gap-4 mb-6">
+                                <div className="bg-red-50 rounded-lg p-4 border border-red-200">
+                                    <h3 className="font-semibold text-red-700 mb-2">Team Leader</h3>
+                                    <p className="text-2xl">{teamStatus.leader || 'Rudolph'}</p>
+                                    <p className="text-sm text-gray-600">Leading the formation</p>
+                                </div>
+                                <div className="bg-green-50 rounded-lg p-4 border border-green-200">
+                                    <h3 className="font-semibold text-green-700 mb-2">Team Morale</h3>
+                                    <p className="text-2xl">{teamStatus.morale || 95}%</p>
+                                    <p className="text-sm text-gray-600">Excellent spirits!</p>
+                                </div>
+                                <div className="bg-blue-50 rounded-lg p-4 border border-blue-200">
+                                    <h3 className="font-semibold text-blue-700 mb-2">Formation</h3>
+                                    <p className="text-2xl">{teamStatus.formation || 'V-Formation'}</p>
+                                    <p className="text-sm text-gray-600">Optimal efficiency</p>
+                                </div>
+                            </div>
 
-          const calculateSantaProgress = () => {
-            const now = new Date();
-            const christmasEve = new Date(now.getFullYear(), 11, 24, 18, 0, 0);
-            const christmasDay = new Date(now.getFullYear(), 11, 25, 6, 0, 0);
-            
-            const totalDeliveryHours = 24;
-            const hoursIntoDelivery = (now - christmasEve) / (1000 * 60 * 60);
-            
-            let santaLon, santaLat;
-            let status;
-            let distance;
-            let timeUntil;
-            let giftsDelivered;
-            
-            if (now < christmasEve) {
-              santaLon = -180;
-              santaLat = 90;
-              status = "Preparing at the North Pole";
-              timeUntil = Math.floor((christmasEve - now) / (1000 * 60 * 60));
-              giftsDelivered = 0;
-            } else if (now >= christmasEve && now < christmasDay) {
-              const progress = hoursIntoDelivery / totalDeliveryHours;
-              santaLon = 180 - (progress * 360);
-              santaLat = 45 + Math.sin(progress * Math.PI * 4) * 20;
-              status = "Out for delivery!";
-              giftsDelivered = Math.floor(progress * 2000000000);
-              
-              if (userLocation) {
-                const userLon = userLocation.lon;
-                if (santaLon < userLon) {
-                  status = "Santa has visited your area!";
-                } else {
-                  const lonDiff = santaLon - userLon;
-                  const hoursAway = (lonDiff / 360) * totalDeliveryHours;
-                  timeUntil = Math.max(0, Math.floor(hoursAway));
-                  status = `Santa is ${timeUntil} hour${timeUntil !== 1 ? 's' : ''} away!`;
-                }
-              }
-            } else {
-              santaLon = -180;
-              santaLat = 90;
-              status = "Back at the North Pole";
-              giftsDelivered = 2000000000;
-            }
+                            {/* Special Status */}
+                            <div className="bg-gradient-to-r from-yellow-50 to-orange-50 rounded-lg p-4 mb-6 border border-yellow-200">
+                                <h3 className="font-semibold text-orange-700 mb-2">🌟 Current Status</h3>
+                                <p className="text-gray-700">{teamStatus.specialStatus || 'The reindeer team is ready for action!'}</p>
+                            </div>
 
-            if (userLocation && now >= christmasEve && now < christmasDay) {
-              const R = 6371;
-              const dLat = (santaLat - userLocation.lat) * Math.PI / 180;
-              const dLon = (santaLon - userLocation.lon) * Math.PI / 180;
-              const a = Math.sin(dLat/2) * Math.sin(dLat/2) +
-                        Math.cos(userLocation.lat * Math.PI / 180) * Math.cos(santaLat * Math.PI / 180) *
-                        Math.sin(dLon/2) * Math.sin(dLon/2);
-              const c = 2 * Math.atan2(Math.sqrt(a), Math.sqrt(1-a));
-              distance = Math.floor(R * c);
-            }
+                            {/* Reindeer Formation Display */}
+                            <div className="mb-6">
+                                <h3 className="text-lg font-semibold mb-4 text-center">🛷 Flight Formation</h3>
+                                <div className="space-y-3">
+                                    {formation.map((row, rowIndex) => (
+                                        <div key={rowIndex} className="flex justify-center items-center space-x-4">
+                                            {row.map((reindeer, colIndex) => (
+                                                <div
+                                                    key={`${rowIndex}-${colIndex}`}
+                                                    className={`text-center p-3 rounded-lg border-2 min-w-[120px] ${
+                                                        reindeer.name === 'Rudolph'
+                                                            ? 'bg-red-100 border-red-300'
+                                                            : 'bg-blue-100 border-blue-300'
+                                                    }`}
+                                                >
+                                                    <div className="text-2xl mb-1">{reindeer.emoji}</div>
+                                                    <div className="font-semibold text-sm">{reindeer.name}</div>
+                                                    <div className="text-xs text-gray-600 capitalize">{reindeer.status}</div>
+                                                </div>
+                                            ))}
+                                        </div>
+                                    ))}
+                                </div>
+                            </div>
 
-            setSantaStats({
-              status,
-              distance,
-              timeUntil,
-              giftsDelivered,
-              santaLon,
-              santaLat
-            });
-          };
+                            {/* Individual Reindeer Details */}
+                            <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
+                                {reindeerTeam.map(reindeer => (
+                                    <div
+                                        key={reindeer.name}
+                                        className={`rounded-lg p-4 border-2 ${
+                                            reindeer.name === 'Rudolph'
+                                                ? 'bg-gradient-to-br from-red-50 to-red-100 border-red-300'
+                                                : 'bg-gradient-to-br from-blue-50 to-blue-100 border-blue-300'
+                                        }`}
+                                    >
+                                        <div className="flex items-center mb-3">
+                                            <span className="text-2xl mr-3">{reindeer.emoji}</span>
+                                            <div>
+                                                <h4 className="font-bold text-lg">{reindeer.name}</h4>
+                                                <p className="text-sm text-gray-600 capitalize">{reindeer.status}</p>
+                                            </div>
+                                        </div>
 
-          const getSantaMessage = async () => {
-            if (loadingMessage) return;
-            
-            setLoadingMessage(true);
-            setSantaMessage('');
-            
-            try {
-              const now = new Date();
-              const christmasEve = new Date(now.getFullYear(), 11, 24, 18, 0, 0);
-              const christmasDay = new Date(now.getFullYear(), 11, 25, 6, 0, 0);
-              
-              let context = '';
-              if (now < christmasEve) {
-                context = 'Santa is at the North Pole preparing for Christmas Eve. The elves are busy wrapping presents.';
-              } else if (now >= christmasEve && now < christmasDay) {
-                context = `Santa is currently delivering presents around the world! ${
-                  santaStats?.distance 
-                    ? `He is about ${santaStats.distance.toLocaleString()} km away from the user's location.`
-                    : 'He is making his way across the globe.'
-                } ${santaStats?.giftsDelivered ? `He has delivered ${santaStats.giftsDelivered.toLocaleString()} gifts so far!` : ''}`;
-              } else {
-                context = 'Santa has finished his Christmas deliveries and is resting at the North Pole with the reindeer.';
-              }
+                                        <div className="space-y-2">
+                                            <div>
+                                                <span className="text-xs font-medium text-gray-500">PERSONALITY:</span>
+                                                <p className="text-sm">{reindeer.personality}</p>
+                                            </div>
 
-              const prompt = `You are Santa Claus! Write a cheerful, warm message (2-3 sentences max) to someone tracking your journey. ${context} Be jolly, mention the reindeer if relevant, and keep it magical and brief. Use emojis sparingly (1-2 max). Don't use quotation marks.`;
+                                            <div>
+                                                <span className="text-xs font-medium text-gray-500">SPECIALTY:</span>
+                                                <p className="text-sm">{reindeer.specialty}</p>
+                                            </div>
 
-              // Call local server proxy which forwards to Ollama
-              const response = await fetch("/api/generate", {
-                method: "POST",
-                headers: {
-                  "Content-Type": "application/json",
-                },
-                body: JSON.stringify({
-                  model: "llama3.2",
-                  prompt: prompt,
-                  stream: false,
-                  options: {
-                    temperature: 0.8,
-                    num_predict: 150
-                  }
-                })
-              });
+                                            <div>
+                                                <span className="text-xs font-medium text-gray-500">CURRENT TASK:</span>
+                                                <p className="text-sm italic text-blue-700">{reindeer.currentTask}</p>
+                                            </div>
 
-              const data = await response.json();
-              const message = data.response || '';
-              setSantaMessage(message.trim());
-            } catch (error) {
-              console.error('Error getting Santa message:', error);
-              setSantaMessage('Ho ho ho! My magic connection seems to be a bit frosty right now. Make sure Ollama is running (ollama serve) and you have llama3.2 installed! 🎅');
-            } finally {
-              setLoadingMessage(false);
-            }
-          };
+                                            <div className="flex justify-between items-center">
+                                                <span className="text-xs font-medium text-gray-500">SPEED:</span>
+                                                <span className={`text-xs px-2 py-1 rounded-full ${
+                                                    reindeer.speed === 'extremely fast' ? 'bg-red-200 text-red-800' :
+                                                    reindeer.speed === 'very fast' ? 'bg-orange-200 text-orange-800' :
+                                                    reindeer.speed === 'fast' ? 'bg-yellow-200 text-yellow-800' :
+                                                    'bg-green-200 text-green-800'
+                                                }`}>
+                                                    {reindeer.speed}
+                                                </span>
+                                            </div>
+                                        </div>
+                                    </div>
+                                ))}
+                            </div>
 
-          return (
-            <div className="min-h-screen bg-gradient-to-b from-blue-900 via-blue-800 to-blue-900 p-8">
-              <div className="max-w-4xl mx-auto">
-                <div className="text-center mb-8">
-                  <h1 className="text-6xl font-bold text-white mb-4 drop-shadow-lg">
-                    🎅 Santa Tracker
-                  </h1>
-                  <p className="text-blue-200 text-xl">Track Santa from YOUR location!</p>
+                            <div className="mt-6 text-center">
+                                <p className="text-sm text-gray-500">
+                                    🎄 The reindeer team updates every 30 seconds during Christmas Eve! ✨
+                                </p>
+                            </div>
+                        </div>
+                    </div>
                 </div>
+            );
+        }
 
-                <div className="bg-gradient-to-b from-blue-800 to-blue-900 rounded-3xl p-8 mb-6 relative overflow-hidden shadow-2xl">
-                  <div className="absolute top-0 left-0 w-full h-full">
-                    {[...Array(50)].map((_, i) => (
-                      <div
-                        key={i}
-                        className="absolute bg-white rounded-full"
-                        style={{
-                          width: Math.random() * 3 + 1 + 'px',
-                          height: Math.random() * 3 + 1 + 'px',
-                          top: Math.random() * 100 + '%',
-                          left: Math.random() * 100 + '%',
-                          opacity: Math.random() * 0.7 + 0.3,
-                          animation: `twinkle ${Math.random() * 3 + 2}s infinite`
-                        }}
-                      />
-                    ))}
-                  </div>
-                  
-                  <div className="absolute top-8 right-8 w-24 h-24 bg-yellow-100 rounded-full shadow-lg opacity-80" />
-                  
-                  <div className="relative z-10 text-center py-12">
-                    <div className="text-9xl mb-4 animate-bounce">
-                      🎅
+        // Weather Panel component
+        function WeatherPanel({ isVisible, onClose, currentWeather, weatherHistory, weatherForecast }) {
+            if (!isVisible) return null;
+
+            const getWeatherIcon = (type) => {
+                const icons = {
+                    'clear': <Sun size={20} className="text-yellow-500" />,
+                    'cloudy': <Cloud size={20} className="text-gray-500" />,
+                    'rain': <CloudRain size={20} className="text-blue-500" />,
+                    'snow': '❄️',
+                    'blizzard': '🌨️',
+                    'storm': '⛈️',
+                    'fog': '🌫️',
+                    'aurora': '🌌',
+                    'sandstorm': '🌪️',
+                    'hot': '🔥',
+                    'windy': <Wind size={20} className="text-gray-600" />
+                };
+                return icons[type] || <Cloud size={20} />;
+            };
+
+            const getDifficultyColor = (difficulty) => {
+                switch (difficulty) {
+                    case 'easy': return 'text-green-600 bg-green-100';
+                    case 'moderate': return 'text-yellow-600 bg-yellow-100';
+                    case 'challenging': return 'text-orange-600 bg-orange-100';
+                    case 'very challenging': return 'text-red-600 bg-red-100';
+                    default: return 'text-gray-600 bg-gray-100';
+                }
+            };
+
+            return (
+                <div className="fixed inset-0 bg-black bg-opacity-50 z-50 flex items-center justify-center p-4">
+                    <div className="bg-white rounded-xl shadow-2xl max-w-4xl w-full max-h-[85vh] overflow-hidden">
+                        <div className="bg-gradient-to-r from-blue-600 to-purple-600 text-white p-6 flex items-center justify-between rounded-t-xl">
+                            <h2 className="text-xl font-bold">🌤️ Santa's Weather Report</h2>
+                            <button
+                                onClick={() => onClose(false)}
+                                className="text-white hover:text-gray-200 transition-colors"
+                            >
+                                <X size={24} />
+                            </button>
+                        </div>
+
+                        <div className="p-6 overflow-y-auto max-h-[70vh]">
+                            {/* Current Weather */}
+                            {currentWeather && (
+                                <div className="mb-6">
+                                    <h3 className="text-lg font-semibold mb-4 text-center">🎅 Current Conditions</h3>
+                                    <div className="bg-gradient-to-br from-blue-50 to-purple-50 rounded-xl p-6 border-2 border-blue-200">
+                                        <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+                                            <div className="space-y-3">
+                                                <div className="flex items-center justify-between">
+                                                    <span className="font-medium text-gray-700">Location:</span>
+                                                    <span className="text-blue-700 font-semibold">{currentWeather.location.area}</span>
+                                                </div>
+                                                <div className="flex items-center justify-between">
+                                                    <span className="font-medium text-gray-700">Condition:</span>
+                                                    <div className="flex items-center space-x-2">
+                                                        {getWeatherIcon(currentWeather.type)}
+                                                        <span>{currentWeather.description}</span>
+                                                    </div>
+                                                </div>
+                                                <div className="flex items-center justify-between">
+                                                    <span className="font-medium text-gray-700">Temperature:</span>
+                                                    <div className="flex items-center space-x-2">
+                                                        <Thermometer size={16} />
+                                                        <span>{Math.round(currentWeather.temperature)}°C</span>
+                                                    </div>
+                                                </div>
+                                                <div className="flex items-center justify-between">
+                                                    <span className="font-medium text-gray-700">Visibility:</span>
+                                                    <div className="flex items-center space-x-2">
+                                                        <Eye size={16} />
+                                                        <span className="capitalize">{currentWeather.visibility}</span>
+                                                    </div>
+                                                </div>
+                                            </div>
+                                            <div className="space-y-3">
+                                                <div className="flex items-center justify-between">
+                                                    <span className="font-medium text-gray-700">Wind Speed:</span>
+                                                    <div className="flex items-center space-x-2">
+                                                        <Wind size={16} />
+                                                        <span>{currentWeather.windSpeed} km/h</span>
+                                                    </div>
+                                                </div>
+                                                <div className="flex items-center justify-between">
+                                                    <span className="font-medium text-gray-700">Flight Difficulty:</span>
+                                                    <span className={`px-3 py-1 rounded-full text-sm font-medium ${getDifficultyColor(currentWeather.difficulty)}`}>
+                                                        {currentWeather.difficulty}
+                                                    </span>
+                                                </div>
+                                                <div className="flex items-center justify-between">
+                                                    <span className="font-medium text-gray-700">Reindeer Mood:</span>
+                                                    <span className="capitalize text-green-600 font-medium">{currentWeather.reindeerMood}</span>
+                                                </div>
+                                                <div className="flex items-center justify-between">
+                                                    <span className="font-medium text-gray-700">Local Time:</span>
+                                                    <span>{currentWeather.localTime}</span>
+                                                </div>
+                                            </div>
+                                        </div>
+
+                                        {currentWeather.christmasMagic && (
+                                            <div className="mt-4 p-3 bg-gradient-to-r from-yellow-100 to-red-100 rounded-lg border border-yellow-300">
+                                                <p className="text-center text-yellow-800 font-medium">
+                                                    ✨ Christmas Magic is Active! ✨
+                                                </p>
+                                            </div>
+                                        )}
+                                    </div>
+                                </div>
+                            )}
+
+                            {/* Weather Forecast */}
+                            {weatherForecast && weatherForecast.length > 0 && (
+                                <div className="mb-6">
+                                    <h3 className="text-lg font-semibold mb-4 text-center">🛷 Forecast Along Santa's Route</h3>
+                                    <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
+                                        {weatherForecast.map((forecast, index) => (
+                                            <div key={index} className="bg-gradient-to-br from-green-50 to-blue-50 rounded-lg p-4 border border-green-200">
+                                                <div className="text-center mb-3">
+                                                    <h4 className="font-semibold text-gray-800">{forecast.location.area}</h4>
+                                                    <p className="text-sm text-gray-600">In {forecast.hoursAhead} hour{forecast.hoursAhead !== 1 ? 's' : ''}</p>
+                                                </div>
+                                                <div className="space-y-2">
+                                                    <div className="flex items-center justify-between">
+                                                        <span className="text-sm text-gray-700">Weather:</span>
+                                                        <div className="flex items-center space-x-1">
+                                                            {getWeatherIcon(forecast.weather.type)}
+                                                            <span className="text-sm">{forecast.weather.description}</span>
+                                                        </div>
+                                                    </div>
+                                                    <div className="flex items-center justify-between">
+                                                        <span className="text-sm text-gray-700">Temp:</span>
+                                                        <span className="text-sm">{Math.round(forecast.weather.temperature)}°C</span>
+                                                    </div>
+                                                    <div className="flex items-center justify-between">
+                                                        <span className="text-sm text-gray-700">Difficulty:</span>
+                                                        <span className={`px-2 py-1 rounded-full text-xs ${getDifficultyColor(forecast.weather.difficulty)}`}>
+                                                            {forecast.weather.difficulty}
+                                                        </span>
+                                                    </div>
+                                                </div>
+                                            </div>
+                                        ))}
+                                    </div>
+                                </div>
+                            )}
+
+                            {/* Weather History */}
+                            {weatherHistory && weatherHistory.length > 0 && (
+                                <div>
+                                    <h3 className="text-lg font-semibold mb-4 text-center">📍 Recent Weather Conditions</h3>
+                                    <div className="space-y-2 max-h-48 overflow-y-auto">
+                                        {weatherHistory.slice(0, 5).map((weather, index) => (
+                                            <div key={index} className="flex items-center justify-between p-3 bg-gray-50 rounded-lg">
+                                                <div className="flex items-center space-x-3">
+                                                    {getWeatherIcon(weather.type)}
+                                                    <div>
+                                                        <p className="font-medium text-sm">{weather.location.area}</p>
+                                                        <p className="text-xs text-gray-600">{weather.description}</p>
+                                                    </div>
+                                                </div>
+                                                <div className="text-right">
+                                                    <p className="text-sm font-medium">{Math.round(weather.temperature)}°C</p>
+                                                    <p className="text-xs text-gray-500">
+                                                        {new Date(weather.timestamp).toLocaleTimeString()}
+                                                    </p>
+                                                </div>
+                                            </div>
+                                        ))}
+                                    </div>
+                                </div>
+                            )}
+
+                            <div className="mt-6 text-center">
+                                <p className="text-sm text-gray-500">
+                                    🌍 Weather updates automatically as Santa travels around the world! 🛷
+                                </p>
+                            </div>
+                        </div>
                     </div>
-                    <div className="text-6xl -mt-8 mb-4">
-                      🦌🦌🦌
-                    </div>
-                    <div className="text-5xl -mt-6">
-                      🛷
-                    </div>
-                  </div>
                 </div>
+            );
+        }
 
-                {locationPermission === 'prompt' && (
-                  <div className="bg-white rounded-2xl p-8 mb-6 shadow-xl text-center">
-                    <div className="w-16 h-16 mx-auto mb-4 text-red-600">📍</div>
-                    <h2 className="text-2xl font-bold mb-4 text-gray-800">
-                      See Santa's Distance from You!
-                    </h2>
-                    <p className="text-gray-600 mb-6">
-                      Share your location to see exactly how far Santa is from your home
-                    </p>
+        // ChimneySafetyPanel component
+        function ChimneySafetyPanel({ isVisible, onClose, currentTip, allTips, categories }) {
+            if (!isVisible) return null;
+
+            const [selectedCategory, setSelectedCategory] = useState('all');
+            const [viewMode, setViewMode] = useState('tips'); // 'tips' or 'categories'
+
+            const filteredTips = selectedCategory === 'all'
+                ? allTips
+                : allTips.filter(tip => tip.category === selectedCategory);
+
+            const getSeverityColor = (severity) => {
+                switch (severity) {
+                    case 'critical': return 'bg-red-100 text-red-800 border-red-300';
+                    case 'important': return 'bg-yellow-100 text-yellow-800 border-yellow-300';
+                    case 'helpful': return 'bg-blue-100 text-blue-800 border-blue-300';
+                    default: return 'bg-gray-100 text-gray-800 border-gray-300';
+                }
+            };
+
+            const getSeverityIcon = (severity) => {
+                switch (severity) {
+                    case 'critical': return '🚨';
+                    case 'important': return '⚠️';
+                    case 'helpful': return '💡';
+                    default: return '💡';
+                }
+            };
+
+            return (
+                <div className="fixed inset-0 bg-black bg-opacity-50 z-50 flex items-center justify-center p-4">
+                    <div className="bg-white rounded-xl shadow-2xl max-w-4xl w-full max-h-[85vh] overflow-hidden">
+                        <div className="bg-gradient-to-r from-red-600 to-green-600 text-white p-6 flex items-center justify-between rounded-t-xl">
+                            <h2 className="text-xl font-bold">🎅 Santa's Chimney & Safety Tips</h2>
+                            <button
+                                onClick={() => onClose(false)}
+                                className="text-white hover:text-gray-200 transition-colors"
+                            >
+                                <X size={24} />
+                            </button>
+                        </div>
+
+                        <div className="p-6 overflow-y-auto max-h-[70vh]">
+                            {/* View Mode Toggle */}
+                            <div className="flex justify-center mb-6">
+                                <div className="bg-gray-100 rounded-lg p-1 flex">
+                                    <button
+                                        onClick={() => setViewMode('tips')}
+                                        className={`px-4 py-2 rounded-md font-medium transition-all ${
+                                            viewMode === 'tips'
+                                                ? 'bg-red-500 text-white'
+                                                : 'text-gray-600 hover:text-gray-800'
+                                        }`}
+                                    >
+                                        📋 Safety Tips
+                                    </button>
+                                    <button
+                                        onClick={() => setViewMode('categories')}
+                                        className={`px-4 py-2 rounded-md font-medium transition-all ${
+                                            viewMode === 'categories'
+                                                ? 'bg-red-500 text-white'
+                                                : 'text-gray-600 hover:text-gray-800'
+                                        }`}
+                                    >
+                                        📂 Categories
+                                    </button>
+                                </div>
+                            </div>
+
+                            {viewMode === 'categories' ? (
+                                // Categories View
+                                <div>
+                                    <h3 className="text-lg font-semibold mb-4 text-center">🏠 Safety Categories</h3>
+                                    <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
+                                        {categories.map((category) => (
+                                            <div
+                                                key={category.name}
+                                                onClick={() => {
+                                                    setSelectedCategory(category.name);
+                                                    setViewMode('tips');
+                                                }}
+                                                className="bg-gradient-to-br from-red-50 to-green-50 rounded-xl p-4 border-2 border-red-200 cursor-pointer hover:border-red-400 transition-all transform hover:scale-105"
+                                            >
+                                                <div className="text-center">
+                                                    <span className="text-3xl mb-2 block">{category.icon}</span>
+                                                    <h4 className="font-bold text-gray-800 mb-1">{category.displayName}</h4>
+                                                    <p className="text-sm text-gray-600">{category.tipCount} tip{category.tipCount !== 1 ? 's' : ''}</p>
+                                                </div>
+                                            </div>
+                                        ))}
+                                    </div>
+                                </div>
+                            ) : (
+                                // Tips View
+                                <div>
+                                    {/* Category Filter */}
+                                    <div className="mb-6">
+                                        <div className="flex flex-wrap gap-2 justify-center">
+                                            <button
+                                                onClick={() => setSelectedCategory('all')}
+                                                className={`px-3 py-2 rounded-full text-sm font-medium transition-all ${
+                                                    selectedCategory === 'all'
+                                                        ? 'bg-red-500 text-white'
+                                                        : 'bg-gray-100 text-gray-700 hover:bg-gray-200'
+                                                }`}
+                                            >
+                                                All Tips ({allTips.length})
+                                            </button>
+                                            {categories.map((category) => (
+                                                <button
+                                                    key={category.name}
+                                                    onClick={() => setSelectedCategory(category.name)}
+                                                    className={`px-3 py-2 rounded-full text-sm font-medium transition-all ${
+                                                        selectedCategory === category.name
+                                                            ? 'bg-red-500 text-white'
+                                                            : 'bg-gray-100 text-gray-700 hover:bg-gray-200'
+                                                    }`}
+                                                >
+                                                    {category.icon} {category.displayName} ({category.tipCount})
+                                                </button>
+                                            ))}
+                                        </div>
+                                    </div>
+
+                                    {/* Current Tip Highlight */}
+                                    {currentTip && selectedCategory === 'all' && (
+                                        <div className="mb-6">
+                                            <h3 className="text-lg font-semibold mb-4 text-center">⭐ Featured Safety Tip</h3>
+                                            <div className="bg-gradient-to-r from-yellow-50 to-orange-50 rounded-xl p-6 border-2 border-yellow-300">
+                                                <div className="flex items-start space-x-4">
+                                                    <span className="text-3xl">{currentTip.icon}</span>
+                                                    <div className="flex-1">
+                                                        <div className="flex items-center justify-between mb-2">
+                                                            <h4 className="font-bold text-lg text-gray-800">{currentTip.title}</h4>
+                                                            <span className={`px-3 py-1 rounded-full text-xs font-medium border ${getSeverityColor(currentTip.severity)}`}>
+                                                                {getSeverityIcon(currentTip.severity)} {currentTip.severity}
+                                                            </span>
+                                                        </div>
+                                                        <p className="text-gray-700 mb-3">{currentTip.tip}</p>
+                                                        <div className="bg-white rounded-lg p-3 border border-yellow-200">
+                                                            <p className="text-red-700 italic">🎅 "{currentTip.santaQuote}"</p>
+                                                        </div>
+                                                    </div>
+                                                </div>
+                                            </div>
+                                        </div>
+                                    )}
+
+                                    {/* Tips List */}
+                                    <div className="space-y-4">
+                                        <h3 className="text-lg font-semibold text-center">
+                                            {selectedCategory === 'all' ? '📋 All Safety Tips' : `${categories.find(c => c.name === selectedCategory)?.icon} ${categories.find(c => c.name === selectedCategory)?.displayName}`}
+                                        </h3>
+                                        {filteredTips.map((tip) => (
+                                            <div
+                                                key={tip.id}
+                                                className={`rounded-xl p-4 border-2 ${
+                                                    tip.id === currentTip?.id
+                                                        ? 'bg-gradient-to-r from-yellow-50 to-orange-50 border-yellow-300'
+                                                        : 'bg-gradient-to-br from-red-50 to-green-50 border-red-200'
+                                                }`}
+                                            >
+                                                <div className="flex items-start space-x-3">
+                                                    <span className="text-2xl">{tip.icon}</span>
+                                                    <div className="flex-1">
+                                                        <div className="flex items-center justify-between mb-2">
+                                                            <h4 className="font-semibold text-gray-800">{tip.title}</h4>
+                                                            <span className={`px-2 py-1 rounded-full text-xs font-medium border ${getSeverityColor(tip.severity)}`}>
+                                                                {getSeverityIcon(tip.severity)} {tip.severity}
+                                                            </span>
+                                                        </div>
+                                                        <p className="text-gray-700 text-sm mb-2">{tip.tip}</p>
+                                                        <div className="bg-white bg-opacity-70 rounded-lg p-2 border border-red-100">
+                                                            <p className="text-red-600 text-xs italic">🎅 "{tip.santaQuote}"</p>
+                                                        </div>
+                                                    </div>
+                                                </div>
+                                            </div>
+                                        ))}
+                                    </div>
+                                </div>
+                            )}
+
+                            <div className="mt-6 text-center">
+                                <p className="text-sm text-gray-500">
+                                    🎄 Safety tips update periodically to help keep your Christmas magical and safe! 🛡️
+                                </p>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            );
+        }
+
+        // Favorites Manager component
+        function FavoritesManager({ isVisible, onClose, favorites, onRemove, currentLanguage }) {
+            if (!isVisible) return null;
+
+            return (
+                <div className="fixed inset-0 bg-black bg-opacity-50 z-50 flex items-center justify-center p-4">
+                    <div className="bg-white rounded-xl shadow-2xl max-w-2xl w-full max-h-[80vh] overflow-hidden">
+                        <div className="bg-gradient-to-r from-pink-600 to-red-600 text-white p-6 flex items-center justify-between rounded-t-xl">
+                            <h2 className="text-xl font-bold">⭐ Favorite Santa Messages</h2>
+                            <button
+                                onClick={() => onClose(false)}
+                                className="text-white hover:text-gray-200 transition-colors"
+                            >
+                                <X size={24} />
+                            </button>
+                        </div>
+
+                        <div className="p-6 overflow-y-auto max-h-[60vh]">
+                            {favorites.length === 0 ? (
+                                <div className="text-center py-8">
+                                    <Heart size={48} className="mx-auto text-gray-300 mb-4" />
+                                    <p className="text-gray-500 mb-2">No favorite messages yet!</p>
+                                    <p className="text-sm text-gray-400">
+                                        Click the ⭐ button next to Santa messages to save your favorites.
+                                    </p>
+                                </div>
+                            ) : (
+                                <div className="space-y-4">
+                                    {favorites.map((favorite) => (
+                                        <div
+                                            key={favorite.id}
+                                            className="bg-gradient-to-br from-red-50 to-green-50 rounded-xl p-4 border-2 border-red-200"
+                                        >
+                                            <div className="flex justify-between items-start mb-2">
+                                                <div className="flex items-center space-x-2">
+                                                    <span className="text-lg">🎅</span>
+                                                    <div className="text-xs text-gray-500">
+                                                        {new Date(favorite.timestamp).toLocaleDateString()} •
+                                                        {favorite.language === 'ko' ? ' 한국어' : ' English'}
+                                                    </div>
+                                                </div>
+                                                <button
+                                                    onClick={() => onRemove(favorite.id)}
+                                                    className="text-red-500 hover:text-red-700 transition-colors p-1 rounded-full hover:bg-red-100"
+                                                    title="Remove from favorites"
+                                                >
+                                                    <Trash2 size={16} />
+                                                </button>
+                                            </div>
+                                            <p className="text-gray-700 leading-relaxed italic">
+                                                "{favorite.message}"
+                                            </p>
+                                        </div>
+                                    ))}
+                                </div>
+                            )}
+
+                            {favorites.length > 0 && (
+                                <div className="mt-6 text-center">
+                                    <p className="text-xs text-gray-500">
+                                        {favorites.length} favorite message{favorites.length !== 1 ? 's' : ''} •
+                                        Maximum 20 messages stored
+                                    </p>
+                                </div>
+                            )}
+                        </div>
+                    </div>
+                </div>
+            );
+        }
+
+        // Language Selector component
+        function LanguageSelector({ isVisible, onClose, currentLanguage, onLanguageChange }) {
+            if (!isVisible) return null;
+
+            const languages = window.languageManager.getSupportedLanguages();
+
+            return (
+                <div className="fixed inset-0 bg-black bg-opacity-50 z-50 flex items-center justify-center p-4">
+                    <div className="bg-white rounded-xl shadow-2xl max-w-sm w-full">
+                        <div className="bg-gradient-to-r from-blue-600 to-blue-700 text-white p-6 flex items-center justify-between rounded-t-xl">
+                            <h2 className="text-xl font-bold">🌐 {window.languageManager.t('config.title')}</h2>
+                            <button
+                                onClick={() => onClose(false)}
+                                className="text-white hover:text-gray-200 transition-colors"
+                            >
+                                <X size={24} />
+                            </button>
+                        </div>
+
+                        <div className="p-6">
+                            <p className="text-gray-600 mb-4">
+                                Choose your language / 언어를 선택하세요
+                            </p>
+
+                            <div className="space-y-2">
+                                {languages.map(lang => (
+                                    <button
+                                        key={lang.code}
+                                        onClick={() => {
+                                            window.languageManager.setLanguage(lang.code);
+                                            onLanguageChange(lang.code);
+                                            onClose(false);
+                                        }}
+                                        className={`w-full text-left p-3 rounded-lg border-2 transition-all ${
+                                            currentLanguage === lang.code
+                                                ? 'border-blue-500 bg-blue-50 text-blue-700'
+                                                : 'border-gray-200 hover:border-blue-300 hover:bg-blue-50'
+                                        }`}
+                                    >
+                                        <div className="flex items-center justify-between">
+                                            <div>
+                                                <div className="font-medium">{lang.nativeName}</div>
+                                                <div className="text-sm text-gray-500">{lang.name}</div>
+                                            </div>
+                                            {currentLanguage === lang.code && (
+                                                <span className="text-blue-500 text-xl">✓</span>
+                                            )}
+                                        </div>
+                                    </button>
+                                ))}
+                            </div>
+
+                            <div className="mt-4 text-center">
+                                <p className="text-xs text-gray-500">
+                                    More languages coming soon! 🎄
+                                </p>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            );
+        }
+
+        // Nice List Checker component
+        function NiceListChecker({ isVisible, onClose, niceListName, setNiceListName, niceListResult, checkingNiceList, onCheck }) {
+            if (!isVisible) return null;
+
+            return (
+                <div className="fixed inset-0 bg-black bg-opacity-50 z-50 flex items-center justify-center p-4">
+                    <div className="bg-white rounded-xl shadow-2xl max-w-md w-full">
+                        <div className="bg-gradient-to-r from-red-600 to-green-600 text-white p-6 flex items-center justify-between rounded-t-xl">
+                            <h2 className="text-xl font-bold">🎅 Santa's Nice List Checker</h2>
+                            <button
+                                onClick={() => onClose(false)}
+                                className="text-white hover:text-gray-200 transition-colors"
+                            >
+                                <X size={24} />
+                            </button>
+                        </div>
+
+                        <div className="p-6">
+                            <p className="text-gray-600 mb-4">
+                                Want to know if you're on Santa's Nice List this year? Enter your name and let Santa's AI check for you!
+                            </p>
+
+                            <div className="space-y-4">
+                                <div>
+                                    <label className="block text-sm font-medium text-gray-700 mb-2">
+                                        Your Name
+                                    </label>
+                                    <input
+                                        type="text"
+                                        value={niceListName}
+                                        onChange={(e) => setNiceListName(e.target.value)}
+                                        onKeyPress={(e) => e.key === 'Enter' && onCheck()}
+                                        placeholder="Enter your name..."
+                                        className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-red-500"
+                                        disabled={checkingNiceList}
+                                    />
+                                </div>
+
+                                <button
+                                    onClick={onCheck}
+                                    disabled={!niceListName.trim() || checkingNiceList}
+                                    className="w-full bg-gradient-to-r from-red-600 to-red-700 hover:from-red-700 hover:to-red-800 text-white font-bold py-3 px-4 rounded-lg transition-all transform hover:scale-105 disabled:opacity-50 disabled:cursor-not-allowed disabled:transform-none"
+                                >
+                                    {checkingNiceList ? '🎅 Santa is checking...' : '✨ Check Nice List'}
+                                </button>
+
+                                {niceListResult && (
+                                    <div className={`mt-4 p-4 rounded-lg border-2 ${
+                                        niceListResult.status === 'NICE'
+                                            ? 'bg-green-50 border-green-300'
+                                            : 'bg-yellow-50 border-yellow-300'
+                                    }`}>
+                                        <div className="flex items-center mb-2">
+                                            <span className="text-2xl mr-2">
+                                                {niceListResult.status === 'NICE' ? '✅' : '⚠️'}
+                                            </span>
+                                            <h3 className={`font-bold ${
+                                                niceListResult.status === 'NICE' ? 'text-green-700' : 'text-yellow-700'
+                                            }`}>
+                                                {niceListResult.status === 'NICE' ? 'On the Nice List!' : 'On the Naughty List'}
+                                            </h3>
+                                        </div>
+                                        <p className={`text-sm ${
+                                            niceListResult.status === 'NICE' ? 'text-green-600' : 'text-yellow-600'
+                                        }`}>
+                                            {niceListResult.message}
+                                        </p>
+                                    </div>
+                                )}
+                            </div>
+
+                            <div className="mt-4 text-center">
+                                <p className="text-xs text-gray-500">
+                                    Santa's magical AI • Results are for fun only! 🎄
+                                </p>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            );
+        }
+
+        // Simple ConfigPanel component for basic functionality
+        function SimpleConfigPanel({ isVisible, onClose, currentModel, availableModels, onModelChange }) {
+            if (!isVisible) {
+                return (
                     <button
-                      onClick={requestLocation}
-                      className="bg-red-600 hover:bg-red-700 text-white font-bold py-4 px-8 rounded-full text-lg transition-all transform hover:scale-105 shadow-lg"
+                        onClick={() => onClose(false)}
+                        className="fixed bottom-4 right-4 bg-red-600 hover:bg-red-700 text-white p-3 rounded-full shadow-lg transition-all transform hover:scale-105"
+                        title="Settings not available in simple mode"
                     >
-                      📍 Share My Location
+                        <Settings size={24} />
                     </button>
-                  </div>
-                )}
+                );
+            }
 
-                {locationPermission === 'denied' && (
-                  <div className="bg-yellow-50 border-2 border-yellow-400 rounded-2xl p-6 mb-6">
-                    <p className="text-yellow-800 text-center">
-                      Location access denied. You can still track Santa globally!
-                    </p>
-                  </div>
-                )}
-
-                {santaStats && (
-                  <div className="bg-white rounded-2xl p-8 shadow-xl mb-6">
-                    <div className="grid md:grid-cols-2 gap-6 mb-6">
-                      <div className="bg-gradient-to-br from-red-500 to-red-600 rounded-xl p-6 text-white">
-                        <div className="flex items-center mb-2">
-                          <span className="mr-2">🕐</span>
-                          <h3 className="text-lg font-semibold">Status</h3>
+            return (
+                <div className="fixed inset-0 bg-black bg-opacity-50 z-50 flex items-center justify-center p-4">
+                    <div className="bg-white rounded-xl shadow-2xl max-w-2xl w-full max-h-[80vh] overflow-hidden">
+                        <div className="bg-red-600 text-white p-6 flex items-center justify-between">
+                            <h2 className="text-xl font-bold">Configuration</h2>
+                            <button
+                                onClick={() => onClose(false)}
+                                className="hover:bg-red-700 p-2 rounded-lg"
+                            >
+                                ✕
+                            </button>
                         </div>
-                        <p className="text-3xl font-bold">{santaStats.status}</p>
-                      </div>
 
-                      {santaStats.distance !== undefined && (
-                        <div className="bg-gradient-to-br from-green-500 to-green-600 rounded-xl p-6 text-white">
-                          <div className="flex items-center mb-2">
-                            <span className="mr-2">📍</span>
-                            <h3 className="text-lg font-semibold">Distance</h3>
-                          </div>
-                          <p className="text-3xl font-bold">
-                            {santaStats.distance.toLocaleString()} km
-                          </p>
-                          <p className="text-sm opacity-90">from your location</p>
-                        </div>
-                      )}
+                        <div className="p-6">
+                            <div className="mb-4">
+                                <h3 className="text-lg font-semibold mb-2">Current Model</h3>
+                                <p className="text-gray-600">{currentModel}</p>
+                            </div>
 
-                      {santaStats.giftsDelivered > 0 && (
-                        <div className="bg-gradient-to-br from-blue-500 to-blue-600 rounded-xl p-6 text-white">
-                          <div className="flex items-center mb-2">
-                            <span className="mr-2">🎁</span>
-                            <h3 className="text-lg font-semibold">Gifts Delivered</h3>
-                          </div>
-                          <p className="text-3xl font-bold">
-                            {santaStats.giftsDelivered.toLocaleString()}
-                          </p>
-                        </div>
-                      )}
+                            <div className="mb-4">
+                                <h3 className="text-lg font-semibold mb-2">Available Models</h3>
+                                <div className="space-y-2">
+                                    {availableModels.map((model) => (
+                                        <div
+                                            key={model.name}
+                                            className={`border rounded-lg p-3 cursor-pointer ${
+                                                currentModel === model.displayName || currentModel === model.name
+                                                    ? 'border-red-500 bg-red-50'
+                                                    : 'border-gray-200 hover:border-gray-300'
+                                            }`}
+                                            onClick={() => onModelChange(model.name)}
+                                        >
+                                            <div className="font-semibold">{model.displayName || model.name}</div>
+                                            <div className="text-sm text-gray-600">{model.description || 'Model description'}</div>
+                                        </div>
+                                    ))}
+                                </div>
+                            </div>
 
-                      {santaStats.timeUntil !== undefined && santaStats.timeUntil > 0 && (
-                        <div className="bg-gradient-to-br from-purple-500 to-purple-600 rounded-xl p-6 text-white">
-                          <div className="flex items-center mb-2">
-                            <span className="mr-2">🕐</span>
-                            <h3 className="text-lg font-semibold">Time Until Arrival</h3>
-                          </div>
-                          <p className="text-3xl font-bold">
-                            {santaStats.timeUntil} hour{santaStats.timeUntil !== 1 ? 's' : ''}
-                          </p>
+                            <div className="text-sm text-gray-500">
+                                <p>💡 For full configuration features, use the enhanced server (enhanced-server.py)</p>
+                            </div>
                         </div>
-                      )}
                     </div>
-
-                    {userLocation && (
-                      <div className="bg-blue-50 rounded-xl p-4 text-center">
-                        <p className="text-gray-700">
-                          📍 Your location: {userLocation.lat.toFixed(2)}°, {userLocation.lon.toFixed(2)}°
-                        </p>
-                        <p className="text-gray-600 text-sm mt-1">
-                          Santa is tracking your area! Make sure you're on the nice list! 🎁
-                        </p>
-                      </div>
-                    )}
-                  </div>
-                )}
-
-                {santaStats && (
-                  <div className="bg-gradient-to-br from-red-50 to-green-50 rounded-2xl p-8 shadow-xl mb-6 border-2 border-red-200">
-                    <div className="text-center mb-4">
-                      <h2 className="text-2xl font-bold text-red-700 mb-2">
-                        🎅 Message from Santa (via Local AI)
-                      </h2>
-                      <p className="text-sm text-gray-600 mb-3">
-                        Powered by Ollama running locally on your machine
-                      </p>
-                      <button
-                        onClick={getSantaMessage}
-                        disabled={loadingMessage}
-                        className="bg-gradient-to-r from-red-600 to-red-700 hover:from-red-700 hover:to-red-800 text-white font-bold py-3 px-6 rounded-full transition-all transform hover:scale-105 shadow-lg disabled:opacity-50 disabled:cursor-not-allowed"
-                      >
-                        {loadingMessage ? '🎄 Santa is writing...' : '✨ Get a message from Santa'}
-                      </button>
-                    </div>
-                    
-                    {santaMessage && (
-                      <div className="bg-white rounded-xl p-6 shadow-inner mt-4 border-2 border-green-200">
-                        <p className="text-gray-800 text-lg leading-relaxed italic">
-                          "{santaMessage}"
-                        </p>
-                        <p className="text-right text-red-600 font-bold mt-3">
-                          - Santa Claus 🎅
-                        </p>
-                      </div>
-                    )}
-                    
-                    <div className="mt-4 p-4 bg-blue-50 rounded-lg border border-blue-200">
-                      <p className="text-xs text-gray-600">
-                        <strong>Setup:</strong> Make sure Ollama is running with: <code className="bg-gray-100 px-2 py-1 rounded">ollama serve</code>
-                        <br />
-                        Install llama3.2: <code className="bg-gray-100 px-2 py-1 rounded">ollama pull llama3.2</code>
-                      </p>
-                    </div>
-                  </div>
-                )}
-
-                <div className="text-center mt-8 text-blue-200">
-                  <p className="text-sm">
-                    🎄 Current Time: {currentTime.toLocaleTimeString()} 🎄
-                  </p>
-                  <p className="text-xs mt-2 opacity-75">
-                    Santa starts his journey on Christmas Eve at 6 PM and travels westward around the world!
-                  </p>
                 </div>
-              </div>
-            </div>
-          );
+            );
+        }
+
+        function SantaTrackerEnhanced() {
+            // Core state
+            const [userLocation, setUserLocation] = useState(null);
+            const [locationPermission, setLocationPermission] = useState('prompt');
+            const [currentTime, setCurrentTime] = useState(new Date());
+            const [santaStats, setSantaStats] = useState(null);
+            const [santaMessage, setSantaMessage] = useState('');
+            const [loadingMessage, setLoadingMessage] = useState(false);
+
+            // Configuration state
+            const [configLoaded, setConfigLoaded] = useState(false);
+            const [configError, setConfigError] = useState(null);
+            const [showConfigPanel, setShowConfigPanel] = useState(false);
+            const [currentModel, setCurrentModel] = useState('');
+            const [modelStatus, setModelStatus] = useState('unknown');
+            const [availableModels, setAvailableModels] = useState([]);
+
+            // Sound settings
+            const [soundEnabled, setSoundEnabled] = useState(true);
+
+            // Animation state
+            const [gifts, setGifts] = useState([]);
+            const giftIdCounter = React.useRef(0);
+
+            // Nice List checker state
+            const [showNiceListChecker, setShowNiceListChecker] = useState(false);
+            const [niceListName, setNiceListName] = useState('');
+            const [niceListResult, setNiceListResult] = useState(null);
+            const [checkingNiceList, setCheckingNiceList] = useState(false);
+
+            // Language state
+            const [currentLanguage, setCurrentLanguage] = useState('en');
+            const [showLanguageSelector, setShowLanguageSelector] = useState(false);
+
+            // Favorites state
+            const [favoriteMessages, setFavoriteMessages] = useState([]);
+            const [showFavorites, setShowFavorites] = useState(false);
+
+            // Reindeer state
+            const [reindeerTeam, setReindeerTeam] = useState([]);
+            const [teamStatus, setTeamStatus] = useState({});
+            const [showReindeerPanel, setShowReindeerPanel] = useState(false);
+
+            // Weather state
+            const [currentWeather, setCurrentWeather] = useState(null);
+            const [weatherHistory, setWeatherHistory] = useState([]);
+            const [weatherForecast, setWeatherForecast] = useState([]);
+            const [showWeatherPanel, setShowWeatherPanel] = useState(false);
+
+            // Chimney Safety state
+            const [currentSafetyTip, setCurrentSafetyTip] = useState(null);
+            const [allSafetyTips, setAllSafetyTips] = useState([]);
+            const [safetyCategories, setSafetyCategories] = useState([]);
+            const [showSafetyPanel, setShowSafetyPanel] = useState(false);
+
+
+            // Initialize configuration system
+            useEffect(() => {
+                initializeConfiguration();
+            }, []);
+
+            // Time updates
+            useEffect(() => {
+                const timer = setInterval(() => setCurrentTime(new Date()), 1000);
+                return () => clearInterval(timer);
+            }, []);
+
+            // Santa progress calculations
+            useEffect(() => {
+                if (userLocation) {
+                    calculateSantaProgress();
+                }
+            }, [userLocation, currentTime]);
+
+            // Santa arrival sound effect
+            useEffect(() => {
+                if (santaStats && santaStats.timeUntil === 0 && userLocation) {
+                    // Play Santa arrival sequence when he reaches user's area
+                    soundManager.playSantaArrival();
+
+                    // Drop multiple gifts when Santa arrives
+                    createGiftShower(); // Use the spectacular shower for Santa's arrival
+                }
+            }, [santaStats?.timeUntil]);
+
+            // Sync sound settings
+            useEffect(() => {
+                soundManager.setEnabled(soundEnabled);
+            }, [soundEnabled]);
+
+            // Initialize language and listen for changes
+            useEffect(() => {
+                // Set initial language from LanguageManager
+                setCurrentLanguage(window.languageManager.getCurrentLanguage());
+
+                // Listen for language changes
+                const handleLanguageChange = (data) => {
+                    setCurrentLanguage(data.to);
+                };
+
+                window.languageManager.addEventListener('language-changed', handleLanguageChange);
+
+                return () => {
+                    window.languageManager.removeEventListener('language-changed', handleLanguageChange);
+                };
+            }, []);
+
+            // Load favorites from localStorage
+            useEffect(() => {
+                try {
+                    const savedFavorites = localStorage.getItem('santa-tracker-favorites');
+                    if (savedFavorites) {
+                        const parsed = JSON.parse(savedFavorites);
+                        setFavoriteMessages(parsed);
+                        console.log('✅ Loaded favorite messages from storage:', parsed.length);
+                    }
+                } catch (error) {
+                    console.warn('⚠️ Failed to load favorites from localStorage:', error);
+                }
+            }, []);
+
+            // Load reindeer team and listen for updates
+            useEffect(() => {
+                // Load initial reindeer data
+                const reindeer = window.reindeerManager.getAllReindeer();
+                const status = window.reindeerManager.getTeamStatus();
+                setReindeerTeam(reindeer);
+                setTeamStatus(status);
+
+                // Listen for reindeer updates
+                const handleReindeerUpdate = (newStatus) => {
+                    setTeamStatus(newStatus);
+                    setReindeerTeam(window.reindeerManager.getAllReindeer());
+                };
+
+                window.reindeerManager.addEventListener('reindeer-updated', handleReindeerUpdate);
+
+                return () => {
+                    window.reindeerManager.removeEventListener('reindeer-updated', handleReindeerUpdate);
+                };
+            }, []);
+
+            // Load weather system and listen for updates
+            useEffect(() => {
+                // Load initial weather data
+                const weather = window.weatherManager.getCurrentWeather();
+                const history = window.weatherManager.getWeatherHistory();
+                const forecast = window.weatherManager.getWeatherForecast();
+
+                setCurrentWeather(weather);
+                setWeatherHistory(history);
+                setWeatherForecast(forecast);
+
+                // Listen for weather updates
+                const handleWeatherUpdate = (newWeather) => {
+                    setCurrentWeather(newWeather);
+                    setWeatherHistory(window.weatherManager.getWeatherHistory());
+                    setWeatherForecast(window.weatherManager.getWeatherForecast());
+                };
+
+                window.weatherManager.addEventListener('weather-updated', handleWeatherUpdate);
+
+                return () => {
+                    window.weatherManager.removeEventListener('weather-updated', handleWeatherUpdate);
+                };
+            }, []);
+
+            // Load chimney safety system and listen for updates
+            useEffect(() => {
+                // Load initial safety data
+                const currentTip = window.chimneySafetyManager.getCurrentTip();
+                const allTips = window.chimneySafetyManager.getAllTips();
+                const categories = window.chimneySafetyManager.getSafetyCategories();
+
+                setCurrentSafetyTip(currentTip);
+                setAllSafetyTips(allTips);
+                setSafetyCategories(categories);
+
+                // Listen for tip changes
+                const handleTipChange = (newTip) => {
+                    setCurrentSafetyTip(newTip);
+                };
+
+                window.chimneySafetyManager.addEventListener('tip-changed', handleTipChange);
+
+                return () => {
+                    window.chimneySafetyManager.removeEventListener('tip-changed', handleTipChange);
+                };
+            }, []);
+
+            const toggleSound = () => {
+                const newState = !soundEnabled;
+                setSoundEnabled(newState);
+
+                if (newState) {
+                    // Play a test sound when enabling
+                    setTimeout(() => soundManager.playNotification(), 100);
+                }
+            };
+
+            const handleLanguageChange = (languageCode) => {
+                setCurrentLanguage(languageCode);
+                console.log(`Language changed to: ${languageCode}`);
+            };
+
+            const saveFavoritesToStorage = (favorites) => {
+                try {
+                    localStorage.setItem('santa-tracker-favorites', JSON.stringify(favorites));
+                    console.log('✅ Favorites saved to localStorage');
+                } catch (error) {
+                    console.warn('⚠️ Failed to save favorites to localStorage:', error);
+                }
+            };
+
+            const addToFavorites = (message) => {
+                const favorite = {
+                    id: Date.now(),
+                    message: message,
+                    timestamp: new Date().toISOString(),
+                    language: currentLanguage
+                };
+
+                const updatedFavorites = [favorite, ...favoriteMessages].slice(0, 20); // Keep max 20 favorites
+                setFavoriteMessages(updatedFavorites);
+                saveFavoritesToStorage(updatedFavorites);
+
+                soundManager.playNotification();
+                console.log('⭐ Added message to favorites');
+            };
+
+            const removeFromFavorites = (id) => {
+                const updatedFavorites = favoriteMessages.filter(fav => fav.id !== id);
+                setFavoriteMessages(updatedFavorites);
+                saveFavoritesToStorage(updatedFavorites);
+
+                soundManager.playGiftDrop();
+                console.log('🗑️ Removed message from favorites');
+            };
+
+            const isMessageFavorited = (message) => {
+                return favoriteMessages.some(fav => fav.message === message);
+            };
+
+
+            const createGiftDrop = (isSpecial = false, customEmoji = null) => {
+                const regularGifts = ['🎁', '🎀', '📦', '🧸', '🍪', '🎨', '📚', '⚽', '🎮', '🪀'];
+                const specialGifts = ['✨', '🌟', '💎', '👑', '🏆', '🎪', '🦄', '🌈'];
+                const christmasGifts = ['🎄', '❄️', '☃️', '🔔', '🕯️', '🎊', '🎉', '🎶'];
+
+                let giftEmoji;
+                let giftType = 'normal';
+
+                if (customEmoji) {
+                    giftEmoji = customEmoji;
+                    giftType = 'custom';
+                } else if (isSpecial || Math.random() < 0.15) {
+                    // 15% chance for special gifts, or forced special
+                    giftEmoji = specialGifts[Math.floor(Math.random() * specialGifts.length)];
+                    giftType = 'special';
+                } else if (Math.random() < 0.25) {
+                    // 25% chance for Christmas-themed gifts
+                    giftEmoji = christmasGifts[Math.floor(Math.random() * christmasGifts.length)];
+                    giftType = 'christmas';
+                } else {
+                    giftEmoji = regularGifts[Math.floor(Math.random() * regularGifts.length)];
+                }
+
+                const randomX = Math.random() * (window.innerWidth - 100);
+                const randomRotation = Math.random() * 360;
+                const randomDelay = Math.random() * 200; // Slight delay variation
+
+                const newGift = {
+                    id: giftIdCounter.current++,
+                    emoji: giftEmoji,
+                    x: randomX,
+                    type: giftType,
+                    rotation: randomRotation,
+                    delay: randomDelay,
+                    createdAt: Date.now()
+                };
+
+                setGifts(prev => [...prev, newGift]);
+
+                // Create sparkle effects for special gifts
+                if (giftType === 'special') {
+                    setTimeout(() => createSparkleEffect(randomX), randomDelay);
+                }
+
+                // Create trail effects for all gifts
+                setTimeout(() => createTrailEffect(randomX, giftEmoji), randomDelay + 500);
+
+                // Remove gift after animation completes (longer for special gifts)
+                const animationDuration = giftType === 'special' ? 5500 : 4500;
+                setTimeout(() => {
+                    setGifts(prev => prev.filter(g => g.id !== newGift.id));
+                }, animationDuration);
+            };
+
+            const createSparkleEffect = (x) => {
+                const sparkleEmojis = ['✨', '⭐', '💫', '🌟'];
+
+                for (let i = 0; i < 3; i++) {
+                    setTimeout(() => {
+                        const sparkle = {
+                            id: giftIdCounter.current++,
+                            emoji: sparkleEmojis[Math.floor(Math.random() * sparkleEmojis.length)],
+                            x: x + (Math.random() * 60 - 30), // Spread around the gift
+                            type: 'sparkle',
+                            createdAt: Date.now()
+                        };
+
+                        setGifts(prev => [...prev, sparkle]);
+
+                        setTimeout(() => {
+                            setGifts(prev => prev.filter(g => g.id !== sparkle.id));
+                        }, 1000);
+                    }, i * 200);
+                }
+            };
+
+            const createTrailEffect = (x, emoji) => {
+                // Create a smaller trail version of the gift
+                const trail = {
+                    id: giftIdCounter.current++,
+                    emoji: emoji,
+                    x: x,
+                    type: 'trail',
+                    createdAt: Date.now()
+                };
+
+                setGifts(prev => [...prev, trail]);
+
+                setTimeout(() => {
+                    setGifts(prev => prev.filter(g => g.id !== trail.id));
+                }, 800);
+            };
+
+            const createMultipleGifts = (count = 3, includeSpecial = false) => {
+                for (let i = 0; i < count; i++) {
+                    setTimeout(() => {
+                        const isSpecial = includeSpecial && i === count - 1; // Make last gift special
+                        createGiftDrop(isSpecial);
+                    }, i * 300); // Slightly faster succession
+                }
+            };
+
+            const createGiftShower = () => {
+                // Create a spectacular gift shower
+                const totalGifts = 8;
+                const specialGiftIndex = Math.floor(totalGifts / 2);
+
+                for (let i = 0; i < totalGifts; i++) {
+                    setTimeout(() => {
+                        createGiftDrop(i === specialGiftIndex);
+                    }, i * 150);
+                }
+
+                // Add some extra sparkles
+                setTimeout(() => {
+                    createSparkleEffect(window.innerWidth / 4);
+                    createSparkleEffect((window.innerWidth / 4) * 3);
+                }, 1000);
+            };
+
+            const createSeasonalGifts = () => {
+                const now = new Date();
+                const christmasEve = now.getMonth() === 11 && now.getDate() === 24;
+                const christmasDay = now.getMonth() === 11 && now.getDate() === 25;
+
+                if (christmasEve || christmasDay) {
+                    // Special Christmas gifts
+                    const christmasGifts = ['🎄', '⭐', '❄️', '🔔'];
+                    christmasGifts.forEach((gift, index) => {
+                        setTimeout(() => {
+                            createGiftDrop(true, gift);
+                        }, index * 400);
+                    });
+                } else {
+                    createMultipleGifts(4, true);
+                }
+            };
+
+            const checkNiceList = async () => {
+                if (!niceListName.trim() || checkingNiceList) return;
+
+                setCheckingNiceList(true);
+                setNiceListResult(null);
+
+                try {
+                    // Use language-aware prompt from LanguageManager
+                    const prompt = window.languageManager.getNiceListPromptPrefix(niceListName);
+
+                    let aiConfig = {};
+                    if (configLoaded) {
+                        const modelConfig = window.configManager.getCurrentModel();
+                        if (modelConfig) {
+                            aiConfig = {
+                                model: modelConfig.name,
+                                options: {
+                                    temperature: 0.9, // Higher creativity for fun responses
+                                    num_predict: 100,
+                                    ...modelConfig.parameters
+                                }
+                            };
+                        }
+                    } else {
+                        aiConfig = {
+                            model: 'llama3.2',
+                            options: {
+                                temperature: 0.9,
+                                num_predict: 100
+                            }
+                        };
+                    }
+
+                    const response = await fetch('/api/generate', {
+                        method: 'POST',
+                        headers: {
+                            'Content-Type': 'application/json',
+                        },
+                        body: JSON.stringify({
+                            prompt: prompt,
+                            stream: false,
+                            ...aiConfig
+                        }),
+                    });
+
+                    if (!response.ok) {
+                        throw new Error(`API error: ${response.status} ${response.statusText}`);
+                    }
+
+                    const data = await response.json();
+                    const result = data.response || '';
+
+                    // Parse the result
+                    const lines = result.split('\n');
+                    let status = 'NICE'; // Default to nice
+                    let message = `Ho ho ho! ${niceListName}, you're definitely on my Nice List this year!`;
+
+                    for (const line of lines) {
+                        if (line.startsWith('STATUS:')) {
+                            const statusMatch = line.match(/STATUS:\s*(NICE|NAUGHTY)/i);
+                            if (statusMatch) {
+                                status = statusMatch[1].toUpperCase();
+                            }
+                        }
+                        if (line.startsWith('MESSAGE:')) {
+                            const messageMatch = line.match(/MESSAGE:\s*(.+)/i);
+                            if (messageMatch) {
+                                message = messageMatch[1].trim();
+                            }
+                        }
+                    }
+
+                    setNiceListResult({
+                        name: niceListName,
+                        status: status,
+                        message: message
+                    });
+
+                    // Play appropriate sound and animation
+                    if (status === 'NICE') {
+                        soundManager.playHoHoHo();
+                        createSeasonalGifts(); // Use seasonal gifts for nice list reward
+                    } else {
+                        soundManager.playNotification();
+                    }
+
+                    console.log('✅ Nice List check completed');
+
+                } catch (error) {
+                    console.error('❌ Error checking Nice List:', error);
+                    setNiceListResult({
+                        name: niceListName,
+                        status: 'NICE',
+                        message: `Ho ho ho! Don't worry ${niceListName}, my magical Nice List checker is taking a little break, but I can tell you're definitely on the Nice List! 🎅✨`
+                    });
+                } finally {
+                    setCheckingNiceList(false);
+                }
+            };
+
+            const initializeConfiguration = async () => {
+                try {
+                    console.log('🎄 Initializing Santa Tracker configuration system...');
+
+                    // Try to load configuration
+                    await window.configManager.load();
+
+                    // Get current model info
+                    const current = window.configManager.getCurrentModel();
+                    setCurrentModel(current?.displayName || current?.name || 'Unknown');
+
+                    // Get available models
+                    const models = window.configManager.getAvailableModels();
+                    setAvailableModels(models);
+
+                    // Set up configuration change listeners
+                    window.configManager.addEventListener('config-changed', handleConfigChange);
+
+                    setConfigLoaded(true);
+                    setModelStatus('configured');
+                    console.log('✅ Configuration system initialized successfully');
+
+                    // Play a welcome jingle to indicate the app is ready
+                    setTimeout(() => {
+                        soundManager.playJingleBells(false);
+                    }, 500);
+
+                } catch (error) {
+                    console.error('❌ Failed to initialize configuration:', error);
+                    setConfigError(error.message);
+                    setConfigLoaded(false);
+
+                    // Still allow the app to work with fallback values
+                    setCurrentModel('llama3.2 (fallback)');
+                    setModelStatus('fallback');
+                    setAvailableModels([
+                        { name: 'llama3.2', displayName: 'Llama 3.2', description: 'Default fallback model' }
+                    ]);
+                }
+            };
+
+            const handleConfigChange = (data) => {
+                console.log('Configuration changed:', data.path);
+
+                // Reload Santa progress if relevant settings changed
+                if (data.path.startsWith('prompts') || data.path.startsWith('aiProvider')) {
+                    calculateSantaProgress();
+                }
+            };
+
+            const handleModelChange = (modelName) => {
+                try {
+                    if (configLoaded) {
+                        // Play jingle bells when switching models
+                        soundManager.playJingleBells(false);
+
+                        window.configManager.setCurrentModel(modelName);
+                        const newModel = window.configManager.getCurrentModel();
+                        setCurrentModel(newModel?.displayName || modelName);
+                    }
+
+                    // Clear current message so it will be regenerated with new model
+                    setSantaMessage('');
+                    setShowConfigPanel(false);
+
+                    console.log('Model changed to:', modelName);
+                } catch (error) {
+                    console.error('Failed to change model:', error);
+                }
+            };
+
+            const requestLocation = () => {
+                // Play sleigh bells when starting location request
+                soundManager.playSleighBells();
+
+                if (navigator.geolocation) {
+                    navigator.geolocation.getCurrentPosition(
+                        (position) => {
+                            setUserLocation({
+                                lat: position.coords.latitude,
+                                lon: position.coords.longitude
+                            });
+                            setLocationPermission('granted');
+
+                            // Play gift drop sound when location is successfully obtained
+                            soundManager.playGiftDrop();
+                        },
+                        (error) => {
+                            console.error('Location error:', error);
+                            setLocationPermission('denied');
+                        }
+                    );
+                }
+            };
+
+            const calculateSantaProgress = () => {
+                const now = new Date();
+                const christmasEve = new Date(now.getFullYear(), 11, 24, 18, 0, 0);
+                const christmasDay = new Date(now.getFullYear(), 11, 25, 6, 0, 0);
+
+                const totalDeliveryHours = 24;
+                const hoursIntoDelivery = (now - christmasEve) / (1000 * 60 * 60);
+
+                let santaLon, santaLat;
+                let status;
+                let distance;
+                let timeUntil;
+                let giftsDelivered;
+
+                if (now < christmasEve) {
+                    santaLon = -180;
+                    santaLat = 90;
+                    status = "Preparing at the North Pole";
+                    timeUntil = Math.floor((christmasEve - now) / (1000 * 60 * 60));
+                    giftsDelivered = 0;
+                } else if (now >= christmasEve && now < christmasDay) {
+                    const progress = hoursIntoDelivery / totalDeliveryHours;
+                    santaLon = 180 - (progress * 360);
+                    santaLat = 45 + Math.sin(progress * Math.PI * 4) * 20;
+                    status = "Out for delivery!";
+                    giftsDelivered = Math.floor(progress * 2000000000);
+
+                    if (userLocation) {
+                        const userLon = userLocation.lon;
+                        if (santaLon < userLon) {
+                            status = "Santa has visited your area!";
+                        } else {
+                            const lonDiff = santaLon - userLon;
+                            const hoursAway = (lonDiff / 360) * totalDeliveryHours;
+                            timeUntil = Math.max(0, Math.floor(hoursAway));
+                            status = `Santa is ${timeUntil} hour${timeUntil !== 1 ? 's' : ''} away!`;
+                        }
+                    }
+                } else {
+                    santaLon = -180;
+                    santaLat = 90;
+                    status = "Back at the North Pole";
+                    giftsDelivered = 2000000000;
+                }
+
+                if (userLocation && now >= christmasEve && now < christmasDay) {
+                    const R = 6371;
+                    const dLat = (santaLat - userLocation.lat) * Math.PI / 180;
+                    const dLon = (santaLon - userLocation.lon) * Math.PI / 180;
+                    const a = Math.sin(dLat/2) * Math.sin(dLat/2) +
+                              Math.cos(userLocation.lat * Math.PI / 180) * Math.cos(santaLat * Math.PI / 180) *
+                              Math.sin(dLon/2) * Math.sin(dLon/2);
+                    const c = 2 * Math.atan2(Math.sqrt(a), Math.sqrt(1-a));
+                    distance = Math.floor(R * c);
+                }
+
+                setSantaStats({
+                    status,
+                    distance,
+                    timeUntil,
+                    giftsDelivered,
+                    santaLon,
+                    santaLat
+                });
+            };
+
+            const getSantaMessage = async () => {
+                if (loadingMessage) return;
+
+                // Play notification sound when generating message
+                soundManager.playNotification();
+
+                setLoadingMessage(true);
+                setSantaMessage('');
+
+                try {
+                    let prompt = '';
+                    let aiConfig = {};
+
+                    if (configLoaded) {
+                        // Use new configuration system
+                        console.log('🎄 Using enhanced configuration system for Santa message');
+
+                        // Generate context-aware prompt using PromptManager
+                        prompt = window.promptManager.generateSantaMessage(santaStats, userLocation);
+
+                        // Get current model configuration
+                        const modelConfig = window.configManager.getCurrentModel();
+                        aiConfig = {
+                            model: window.configManager.get('aiProvider.defaultModel'),
+                            options: modelConfig?.parameters || {
+                                temperature: 0.8,
+                                num_predict: 150
+                            }
+                        };
+
+                    } else {
+                        // Fallback to old hardcoded approach
+                        console.log('⚠️ Using fallback configuration for Santa message');
+
+                        const now = new Date();
+                        const christmasEve = new Date(now.getFullYear(), 11, 24, 18, 0, 0);
+                        const christmasDay = new Date(now.getFullYear(), 11, 25, 6, 0, 0);
+
+                        let context = '';
+                        if (now < christmasEve) {
+                            context = 'Santa is at the North Pole preparing for Christmas Eve. The elves are busy wrapping presents.';
+                        } else if (now >= christmasEve && now < christmasDay) {
+                            context = `Santa is currently delivering presents around the world! ${
+                                santaStats?.distance
+                                    ? `He is about ${santaStats.distance.toLocaleString()} km away from the user's location.`
+                                    : 'He is making his way across the globe.'
+                            } ${santaStats?.giftsDelivered ? `He has delivered ${santaStats.giftsDelivered.toLocaleString()} gifts so far!` : ''}`;
+                        } else {
+                            context = 'Santa has finished his Christmas deliveries and is resting at the North Pole with the reindeer.';
+                        }
+
+                        prompt = `You are Santa Claus! Write a cheerful, warm message (2-3 sentences max) to someone tracking your journey. ${context} Be jolly, mention the reindeer if relevant, and keep it magical and brief. Use emojis sparingly (1-2 max). Don't use quotation marks.`;
+
+                        aiConfig = {
+                            model: "llama3.2",
+                            options: {
+                                temperature: 0.8,
+                                num_predict: 150
+                            }
+                        };
+                    }
+
+                    // Get Ollama URL
+                    const ollamaUrl = configLoaded
+                        ? window.configManager.get('aiProvider.url')
+                        : "http://localhost:11434";
+
+                    // Make API request through server proxy
+                    const response = await fetch("/api/generate", {
+                        method: "POST",
+                        headers: {
+                            "Content-Type": "application/json",
+                        },
+                        body: JSON.stringify({
+                            model: aiConfig.model,
+                            prompt: prompt,
+                            stream: false,
+                            options: aiConfig.options
+                        })
+                    });
+
+                    if (!response.ok) {
+                        throw new Error(`API error: ${response.status} ${response.statusText}`);
+                    }
+
+                    const data = await response.json();
+                    const message = data.response || '';
+                    setSantaMessage(message.trim());
+
+                    // Play ho ho ho sound when message is successfully generated
+                    soundManager.playHoHoHo();
+
+                    // Drop a special gift when message is generated
+                    createGiftDrop(Math.random() < 0.3); // 30% chance for special gift
+
+                    console.log('✅ Santa message generated successfully');
+
+                } catch (error) {
+                    console.error('❌ Error getting Santa message:', error);
+
+                    // User-friendly error message
+                    const errorMessage = 'Ho ho ho! My magical messaging system seems to be taking a little Christmas break. Please try again in a moment! 🎅✨';
+
+                    setSantaMessage(errorMessage);
+                } finally {
+                    setLoadingMessage(false);
+                }
+            };
+
+            // Configuration status indicator
+            const ConfigStatus = () => {
+                if (!configLoaded) {
+                    return (
+                        <div className="bg-yellow-50 border-l-4 border-yellow-400 p-3 mb-4">
+                            <div className="flex">
+                                <AlertTriangle className="w-5 h-5 text-yellow-400 mr-2" />
+                                <div>
+                                    <p className="text-sm text-yellow-700 font-medium">Configuration Issue</p>
+                                    <p className="text-xs text-yellow-600">
+                                        {configError || 'Using fallback configuration'}
+                                    </p>
+                                </div>
+                            </div>
+                        </div>
+                    );
+                }
+
+                return (
+                    <div className="bg-green-50 border-l-4 border-green-400 p-3 mb-4">
+                        <div className="flex items-center">
+                            <div className="w-2 h-2 bg-green-400 rounded-full mr-2"></div>
+                            <p className="text-sm text-green-700">
+                                <span className="font-medium">Santa's Magic:</span> Ready & Operational ✨
+                            </p>
+                        </div>
+                    </div>
+                );
+            };
+
+            return (
+                <div className="min-h-screen bg-gradient-to-b from-blue-900 via-blue-800 to-blue-900 p-8">
+                    <div className="max-w-4xl mx-auto">
+                        {/* Configuration Status */}
+                        <ConfigStatus />
+
+                        {/* Header */}
+                        <div className="text-center mb-8">
+                            <div className="flex items-center justify-center mb-4">
+                                <h1 className="text-6xl font-bold text-white drop-shadow-lg mr-4">
+                                    {window.languageManager.t('app.title')}
+                                </h1>
+                                <div className="flex space-x-2">
+                                    <button
+                                        onClick={toggleSound}
+                                        className="bg-white bg-opacity-20 hover:bg-opacity-30 text-white p-3 rounded-full transition-all transform hover:scale-105"
+                                        title={soundEnabled ? "Disable Sound Effects" : "Enable Sound Effects"}
+                                    >
+                                        {soundEnabled ?
+                                            <span className="text-xl">🔊</span> :
+                                            <span className="text-xl">🔇</span>
+                                        }
+                                    </button>
+                                    <button
+                                        onClick={() => {
+                                            soundManager.playGiftDrop();
+                                            // Randomly choose between different gift drop types
+                                            const dropType = Math.random();
+                                            if (dropType < 0.3) {
+                                                createGiftShower();
+                                            } else if (dropType < 0.6) {
+                                                createSeasonalGifts();
+                                            } else {
+                                                createMultipleGifts(4, true);
+                                            }
+                                        }}
+                                        className="bg-white bg-opacity-20 hover:bg-opacity-30 text-white p-3 rounded-full transition-all transform hover:scale-105"
+                                        title="Drop Some Gifts! (Enhanced with special effects)"
+                                    >
+                                        <span className="text-xl">🎁</span>
+                                    </button>
+                                    <button
+                                        onClick={() => setShowNiceListChecker(true)}
+                                        className="bg-white bg-opacity-20 hover:bg-opacity-30 text-white p-3 rounded-full transition-all transform hover:scale-105"
+                                        title="Check Santa's Nice List"
+                                    >
+                                        <span className="text-xl">📋</span>
+                                    </button>
+                                    <button
+                                        onClick={() => setShowLanguageSelector(true)}
+                                        className="bg-white bg-opacity-20 hover:bg-opacity-30 text-white p-3 rounded-full transition-all transform hover:scale-105"
+                                        title={`Language: ${window.languageManager.getLanguageNativeName(currentLanguage)}`}
+                                    >
+                                        <Globe size={24} />
+                                    </button>
+                                    <button
+                                        onClick={() => setShowFavorites(true)}
+                                        className="bg-white bg-opacity-20 hover:bg-opacity-30 text-white p-3 rounded-full transition-all transform hover:scale-105 relative"
+                                        title="Favorite Messages"
+                                    >
+                                        <Heart size={24} />
+                                        {favoriteMessages.length > 0 && (
+                                            <span className="absolute -top-1 -right-1 bg-red-500 text-white text-xs rounded-full w-5 h-5 flex items-center justify-center">
+                                                {favoriteMessages.length}
+                                            </span>
+                                        )}
+                                    </button>
+                                    <button
+                                        onClick={() => {
+                                            soundManager.playSleighBells();
+                                            setShowReindeerPanel(true);
+                                        }}
+                                        className="bg-white bg-opacity-20 hover:bg-opacity-30 text-white p-3 rounded-full transition-all transform hover:scale-105 relative"
+                                        title="Reindeer Team Status"
+                                    >
+                                        <span className="text-xl">🦌</span>
+                                        <span className="absolute -top-1 -right-1 bg-green-500 text-white text-xs rounded-full w-5 h-5 flex items-center justify-center">
+                                            {teamStatus.morale || 95}
+                                        </span>
+                                    </button>
+                                    <button
+                                        onClick={() => {
+                                            soundManager.playNotification();
+                                            setShowWeatherPanel(true);
+                                        }}
+                                        className="bg-white bg-opacity-20 hover:bg-opacity-30 text-white p-3 rounded-full transition-all transform hover:scale-105 relative"
+                                        title={`Santa's Weather: ${currentWeather?.description || 'Loading...'}`}
+                                    >
+                                        <span className="text-xl">
+                                            {currentWeather?.icon || '🌤️'}
+                                        </span>
+                                        {currentWeather?.christmasMagic && (
+                                            <span className="absolute -top-1 -right-1 bg-yellow-500 text-white text-xs rounded-full w-5 h-5 flex items-center justify-center">
+                                                ✨
+                                            </span>
+                                        )}
+                                    </button>
+                                    <button
+                                        onClick={() => {
+                                            soundManager.playNotification();
+                                            setShowSafetyPanel(true);
+                                        }}
+                                        className="bg-white bg-opacity-20 hover:bg-opacity-30 text-white p-3 rounded-full transition-all transform hover:scale-105 relative"
+                                        title={`Safety Tips: ${currentSafetyTip?.title || 'Loading...'}`}
+                                    >
+                                        <Shield size={24} />
+                                        {currentSafetyTip?.severity === 'critical' && (
+                                            <span className="absolute -top-1 -right-1 bg-red-500 text-white text-xs rounded-full w-5 h-5 flex items-center justify-center">
+                                                !
+                                            </span>
+                                        )}
+                                    </button>
+                                    <button
+                                        onClick={() => setShowConfigPanel(true)}
+                                        className="bg-white bg-opacity-20 hover:bg-opacity-30 text-white p-3 rounded-full transition-all transform hover:scale-105"
+                                        title="Open Configuration"
+                                    >
+                                        <Settings size={24} />
+                                    </button>
+                                </div>
+                            </div>
+                            <p className="text-blue-200 text-xl">{window.languageManager.t('app.subtitle')}</p>
+                        </div>
+
+                        {/* Santa's Sleigh Illustration */}
+                        <div className="bg-gradient-to-b from-blue-800 to-blue-900 rounded-3xl p-8 mb-6 relative overflow-hidden shadow-2xl">
+                            <div className="absolute top-0 left-0 w-full h-full">
+                                {/* Stars */}
+                                {[...Array(50)].map((_, i) => (
+                                    <div
+                                        key={i}
+                                        className="absolute bg-white rounded-full"
+                                        style={{
+                                            width: Math.random() * 3 + 1 + 'px',
+                                            height: Math.random() * 3 + 1 + 'px',
+                                            top: Math.random() * 100 + '%',
+                                            left: Math.random() * 100 + '%',
+                                            opacity: Math.random() * 0.7 + 0.3,
+                                            animation: `twinkle ${Math.random() * 3 + 2}s infinite`
+                                        }}
+                                    />
+                                ))}
+                            </div>
+
+                            {/* Moon */}
+                            <div className="absolute top-8 right-8 w-24 h-24 bg-yellow-100 rounded-full shadow-lg opacity-80" />
+
+                            {/* Santa and Sleigh */}
+                            <div className="relative z-10 text-center py-12">
+                                <div className="text-9xl mb-4 animate-bounce">
+                                    🎅
+                                </div>
+                                <div className="text-6xl -mt-8 mb-4">
+                                    🦌🦌🦌
+                                </div>
+                                <div className="text-5xl -mt-6">
+                                    🛷
+                                </div>
+                            </div>
+                        </div>
+
+                        {/* Location Permission */}
+                        {locationPermission === 'prompt' && (
+                            <div className="bg-white rounded-2xl p-8 mb-6 shadow-xl text-center">
+                                <MapPin className="w-16 h-16 mx-auto mb-4 text-red-600" />
+                                <h2 className="text-2xl font-bold mb-4 text-gray-800">
+                                    See Santa's Distance from You!
+                                </h2>
+                                <p className="text-gray-600 mb-6">
+                                    Share your location to see exactly how far Santa is from your home
+                                </p>
+                                <button
+                                    onClick={requestLocation}
+                                    className="bg-red-600 hover:bg-red-700 text-white font-bold py-4 px-8 rounded-full text-lg transition-all transform hover:scale-105 shadow-lg"
+                                >
+                                    {window.languageManager.t('button.shareLocation')}
+                                </button>
+                            </div>
+                        )}
+
+                        {locationPermission === 'denied' && (
+                            <div className="bg-yellow-50 border-2 border-yellow-400 rounded-2xl p-6 mb-6">
+                                <p className="text-yellow-800 text-center">
+                                    Location access denied. You can still track Santa globally!
+                                </p>
+                            </div>
+                        )}
+
+                        {/* Santa Stats */}
+                        {santaStats && (
+                            <div className="bg-white rounded-2xl p-8 shadow-xl mb-6">
+                                <div className="grid md:grid-cols-2 gap-6 mb-6">
+                                    <div className="bg-gradient-to-br from-red-500 to-red-600 rounded-xl p-6 text-white">
+                                        <div className="flex items-center mb-2">
+                                            <Clock className="w-6 h-6 mr-2" />
+                                            <h3 className="text-lg font-semibold">Status</h3>
+                                        </div>
+                                        <p className="text-3xl font-bold">{santaStats.status}</p>
+                                    </div>
+
+                                    {santaStats.distance !== undefined && (
+                                        <div className="bg-gradient-to-br from-green-500 to-green-600 rounded-xl p-6 text-white">
+                                            <div className="flex items-center mb-2">
+                                                <MapPin className="w-6 h-6 mr-2" />
+                                                <h3 className="text-lg font-semibold">Distance</h3>
+                                            </div>
+                                            <p className="text-3xl font-bold">
+                                                {santaStats.distance.toLocaleString()} km
+                                            </p>
+                                            <p className="text-sm opacity-90">from your location</p>
+                                        </div>
+                                    )}
+
+                                    {santaStats.giftsDelivered > 0 && (
+                                        <div className="bg-gradient-to-br from-blue-500 to-blue-600 rounded-xl p-6 text-white">
+                                            <div className="flex items-center mb-2">
+                                                <Gift className="w-6 h-6 mr-2" />
+                                                <h3 className="text-lg font-semibold">Gifts Delivered</h3>
+                                            </div>
+                                            <p className="text-3xl font-bold">
+                                                {santaStats.giftsDelivered.toLocaleString()}
+                                            </p>
+                                        </div>
+                                    )}
+
+                                    {santaStats.timeUntil !== undefined && santaStats.timeUntil > 0 && (
+                                        <div className="bg-gradient-to-br from-purple-500 to-purple-600 rounded-xl p-6 text-white">
+                                            <div className="flex items-center mb-2">
+                                                <Clock className="w-6 h-6 mr-2" />
+                                                <h3 className="text-lg font-semibold">Time Until Arrival</h3>
+                                            </div>
+                                            <p className="text-3xl font-bold">
+                                                {santaStats.timeUntil} hour{santaStats.timeUntil !== 1 ? 's' : ''}
+                                            </p>
+                                        </div>
+                                    )}
+                                </div>
+
+                                {userLocation && (
+                                    <div className="bg-blue-50 rounded-xl p-4 text-center">
+                                        <p className="text-gray-700">
+                                            📍 Your location: {userLocation.lat.toFixed(2)}°, {userLocation.lon.toFixed(2)}°
+                                        </p>
+                                        <p className="text-gray-600 text-sm mt-1">
+                                            Santa is tracking your area! Make sure you're on the nice list! 🎁
+                                        </p>
+                                    </div>
+                                )}
+
+                                {/* Weather Report */}
+                                {currentWeather && (
+                                    <div className="bg-gradient-to-br from-cyan-50 to-blue-50 rounded-xl p-4 mt-4 border border-cyan-200">
+                                        <div className="flex items-center justify-between mb-2">
+                                            <h4 className="font-semibold text-cyan-800 flex items-center">
+                                                <span className="text-lg mr-2">{currentWeather.icon}</span>
+                                                Weather Report
+                                            </h4>
+                                            <button
+                                                onClick={() => setShowWeatherPanel(true)}
+                                                className="text-cyan-600 hover:text-cyan-800 text-sm font-medium"
+                                            >
+                                                View Details →
+                                            </button>
+                                        </div>
+                                        <div className="grid grid-cols-2 md:grid-cols-4 gap-3 text-sm">
+                                            <div className="text-center">
+                                                <p className="text-gray-600">Location</p>
+                                                <p className="font-medium">{currentWeather.location.area}</p>
+                                            </div>
+                                            <div className="text-center">
+                                                <p className="text-gray-600">Condition</p>
+                                                <p className="font-medium">{currentWeather.description}</p>
+                                            </div>
+                                            <div className="text-center">
+                                                <p className="text-gray-600">Temperature</p>
+                                                <p className="font-medium">{Math.round(currentWeather.temperature)}°C</p>
+                                            </div>
+                                            <div className="text-center">
+                                                <p className="text-gray-600">Flight Status</p>
+                                                <p className={`font-medium capitalize ${
+                                                    currentWeather.difficulty === 'easy' ? 'text-green-600' :
+                                                    currentWeather.difficulty === 'moderate' ? 'text-yellow-600' :
+                                                    'text-red-600'
+                                                }`}>
+                                                    {currentWeather.difficulty}
+                                                </p>
+                                            </div>
+                                        </div>
+                                        {currentWeather.christmasMagic && (
+                                            <div className="mt-3 text-center">
+                                                <span className="inline-flex items-center px-3 py-1 rounded-full text-xs font-medium bg-yellow-100 text-yellow-800">
+                                                    ✨ Christmas Magic Active ✨
+                                                </span>
+                                            </div>
+                                        )}
+                                    </div>
+                                )}
+                            </div>
+                        )}
+
+                        {/* Safety Tip Display */}
+                        {currentSafetyTip && (
+                            <div className="bg-gradient-to-br from-orange-50 to-red-50 rounded-2xl p-6 shadow-xl mb-6 border-2 border-orange-200">
+                                <div className="flex items-center justify-between mb-4">
+                                    <h3 className="text-xl font-bold text-orange-800 flex items-center">
+                                        <span className="text-2xl mr-3">{currentSafetyTip.icon}</span>
+                                        Santa's Safety Tip
+                                    </h3>
+                                    <div className="flex items-center space-x-2">
+                                        <span className={`px-3 py-1 rounded-full text-xs font-medium border ${
+                                            currentSafetyTip.severity === 'critical' ? 'bg-red-100 text-red-800 border-red-300' :
+                                            currentSafetyTip.severity === 'important' ? 'bg-yellow-100 text-yellow-800 border-yellow-300' :
+                                            'bg-blue-100 text-blue-800 border-blue-300'
+                                        }`}>
+                                            {currentSafetyTip.severity === 'critical' ? '🚨' :
+                                             currentSafetyTip.severity === 'important' ? '⚠️' : '💡'} {currentSafetyTip.severity}
+                                        </span>
+                                        <button
+                                            onClick={() => setShowSafetyPanel(true)}
+                                            className="text-orange-600 hover:text-orange-800 text-sm font-medium"
+                                        >
+                                            View All Tips →
+                                        </button>
+                                    </div>
+                                </div>
+                                <div className="bg-white bg-opacity-70 rounded-xl p-4 mb-4">
+                                    <h4 className="font-semibold text-gray-800 mb-2">{currentSafetyTip.title}</h4>
+                                    <p className="text-gray-700 mb-3">{currentSafetyTip.tip}</p>
+                                    <div className="bg-gradient-to-r from-red-50 to-green-50 rounded-lg p-3 border border-red-200">
+                                        <p className="text-red-700 text-sm italic font-medium">
+                                            🎅 "{currentSafetyTip.santaQuote}"
+                                        </p>
+                                    </div>
+                                </div>
+                                <div className="text-center">
+                                    <p className="text-xs text-orange-600">
+                                        Safety tips rotate every 2 minutes • Follow Santa's advice for a magical Christmas! 🛡️
+                                    </p>
+                                </div>
+                            </div>
+                        )}
+
+                        {/* Santa's Personal Message */}
+                        {santaStats && (
+                            <div className="bg-gradient-to-br from-red-50 to-green-50 rounded-2xl p-8 shadow-xl mb-6 border-2 border-red-200">
+                                <div className="text-center mb-4">
+                                    <h2 className="text-2xl font-bold text-red-700 mb-2">
+                                        🎅 Message from Santa
+                                    </h2>
+                                    <p className="text-sm text-gray-600 mb-3">
+                                        Santa's magical AI assistant is ready to send you a personalized message!
+                                    </p>
+                                    <button
+                                        onClick={getSantaMessage}
+                                        disabled={loadingMessage}
+                                        className="bg-gradient-to-r from-red-600 to-red-700 hover:from-red-700 hover:to-red-800 text-white font-bold py-3 px-6 rounded-full transition-all transform hover:scale-105 shadow-lg disabled:opacity-50 disabled:cursor-not-allowed"
+                                    >
+                                        {loadingMessage
+                                            ? window.languageManager.t('ai.generating')
+                                            : window.languageManager.t('button.getSantaMessage')
+                                        }
+                                    </button>
+                                </div>
+
+                                {santaMessage && (
+                                    <div className="bg-white rounded-xl p-6 shadow-inner mt-4 border-2 border-green-200">
+                                        <div className="flex justify-between items-start mb-3">
+                                            <p className="text-gray-800 text-lg leading-relaxed italic flex-1">
+                                                "{santaMessage}"
+                                            </p>
+                                            <div className="flex space-x-2 ml-4">
+                                                <button
+                                                    onClick={() => {
+                                                        if (isMessageFavorited(santaMessage)) {
+                                                            const favorite = favoriteMessages.find(fav => fav.message === santaMessage);
+                                                            if (favorite) removeFromFavorites(favorite.id);
+                                                        } else {
+                                                            addToFavorites(santaMessage);
+                                                        }
+                                                    }}
+                                                    className={`p-2 rounded-full transition-all transform hover:scale-110 ${
+                                                        isMessageFavorited(santaMessage)
+                                                            ? 'text-red-500 bg-red-50 hover:bg-red-100'
+                                                            : 'text-gray-400 hover:text-red-500 hover:bg-red-50'
+                                                    }`}
+                                                    title={isMessageFavorited(santaMessage) ? "Remove from favorites" : "Add to favorites"}
+                                                >
+                                                    <Heart
+                                                        size={20}
+                                                        fill={isMessageFavorited(santaMessage) ? 'currentColor' : 'none'}
+                                                    />
+                                                </button>
+                                            </div>
+                                        </div>
+                                        <p className="text-right text-red-600 font-bold">
+                                            - Santa Claus 🎅
+                                        </p>
+                                    </div>
+                                )}
+
+                            </div>
+                        )}
+
+                        {/* Footer */}
+                        <div className="text-center mt-8 text-blue-200">
+                            <p className="text-sm">
+                                🎄 Current Time: {currentTime.toLocaleTimeString()} 🎄
+                            </p>
+                            <p className="text-xs mt-2 opacity-75">
+                                Santa starts his journey on Christmas Eve at 6 PM and travels westward around the world!
+                            </p>
+                            <p className="text-xs mt-1 text-green-300">
+                                🎄 All Christmas magic systems are operational! Click ⚙️ for settings 🎄
+                            </p>
+                        </div>
+                    </div>
+
+                    {/* Enhanced Animated Gift Drops */}
+                    {gifts.map(gift => {
+                        const getGiftClassName = (type) => {
+                            switch (type) {
+                                case 'special':
+                                    return 'gift-drop special magical-shimmer';
+                                case 'sparkle':
+                                    return 'gift-sparkle';
+                                case 'trail':
+                                    return 'gift-trail';
+                                default:
+                                    return 'gift-drop';
+                            }
+                        };
+
+                        return (
+                            <div
+                                key={gift.id}
+                                className={getGiftClassName(gift.type)}
+                                style={{
+                                    left: `${gift.x}px`,
+                                    top: gift.type === 'sparkle' ? `${Math.random() * 200 + 100}px` :
+                                         gift.type === 'trail' ? '20vh' : '-100px',
+                                    animationDelay: `${gift.delay || 0}ms`,
+                                    transform: gift.rotation ? `rotate(${gift.rotation}deg)` : 'none'
+                                }}
+                            >
+                                {gift.emoji}
+                            </div>
+                        );
+                    })}
+
+                    {/* Simple Configuration Panel */}
+                    <SimpleConfigPanel
+                        isVisible={showConfigPanel}
+                        onClose={setShowConfigPanel}
+                        currentModel={currentModel}
+                        availableModels={availableModels}
+                        onModelChange={handleModelChange}
+                    />
+
+                    {/* Nice List Checker */}
+                    <NiceListChecker
+                        isVisible={showNiceListChecker}
+                        onClose={setShowNiceListChecker}
+                        niceListName={niceListName}
+                        setNiceListName={setNiceListName}
+                        niceListResult={niceListResult}
+                        checkingNiceList={checkingNiceList}
+                        onCheck={checkNiceList}
+                    />
+
+                    {/* Language Selector */}
+                    <LanguageSelector
+                        isVisible={showLanguageSelector}
+                        onClose={setShowLanguageSelector}
+                        currentLanguage={currentLanguage}
+                        onLanguageChange={handleLanguageChange}
+                    />
+
+                    {/* Favorites Manager */}
+                    <FavoritesManager
+                        isVisible={showFavorites}
+                        onClose={setShowFavorites}
+                        favorites={favoriteMessages}
+                        onRemove={removeFromFavorites}
+                        currentLanguage={currentLanguage}
+                    />
+
+                    {/* Reindeer Panel */}
+                    <ReindeerPanel
+                        isVisible={showReindeerPanel}
+                        onClose={setShowReindeerPanel}
+                        reindeerTeam={reindeerTeam}
+                        teamStatus={teamStatus}
+                    />
+
+                    {/* Weather Panel */}
+                    <WeatherPanel
+                        isVisible={showWeatherPanel}
+                        onClose={setShowWeatherPanel}
+                        currentWeather={currentWeather}
+                        weatherHistory={weatherHistory}
+                        weatherForecast={weatherForecast}
+                    />
+
+                    {/* Chimney Safety Panel */}
+                    <ChimneySafetyPanel
+                        isVisible={showSafetyPanel}
+                        onClose={setShowSafetyPanel}
+                        currentTip={currentSafetyTip}
+                        allTips={allSafetyTips}
+                        categories={safetyCategories}
+                    />
+
+                </div>
+            );
         }
 
         const root = ReactDOM.createRoot(document.getElementById('root'));
-        root.render(<SantaTracker />);
+        root.render(<SantaTrackerEnhanced />);
     </script>
 </body>
 </html>

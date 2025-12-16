@@ -8,13 +8,26 @@ Track Santa's Christmas Eve journey around the world from YOUR exact location, w
 
 ## ✨ Features
 
+### Core Tracking
 - 🌍 **Real-time Santa tracking** - See exactly where Santa is on Christmas Eve
-- 📍 **Location-based perspective** - Calculate Santa's distance from YOUR location (opt-in only, with your explicit consent)
+- 📍 **Location-based perspective** - Calculate Santa's distance from YOUR location (opt-in only)
 - 🤖 **AI-powered messages** - Get personalized greetings from Santa using Ollama + Llama 3.2
-- 🎨 **Beautiful animations** - Twinkling stars, bouncing sleigh, festive visuals
-- 🔒 **100% Local & Private** - No external API calls, all processing on your machine
 - ⏱️ **Live countdown** - See when Santa will reach your area
 - 🎁 **Gift counter** - Track how many presents Santa has delivered
+
+### Enhanced Experience
+- 🔊 **Christmas Sounds** - Sleigh bells, ho-ho-ho, and gift drop sound effects
+- 🎁 **Animated Gift Drops** - Interactive gift animations with sparkles and trails
+- 📋 **Nice List Checker** - Ask Santa's AI to check if you're on the nice list
+- 🌐 **Multi-language Support** - English and Korean language options
+- ⭐ **Favorite Messages** - Save your favorite Santa messages
+- 🦌 **Reindeer Team Tracking** - Monitor each reindeer's status and formation
+- 🌤️ **Weather Along Route** - Dynamic weather conditions on Santa's journey
+- 🏠 **Chimney Safety Tips** - Rotating safety advice with Santa's personal quotes
+
+### Privacy & Performance
+- 🔒 **100% Local & Private** - No external API calls, all processing on your machine
+- 🎨 **Beautiful animations** - Twinkling stars, bouncing sleigh, festive visuals
 
 ### 🔧 Enhanced Configuration System (NEW!)
 
@@ -135,10 +148,17 @@ The location feature simply enhances the experience by showing Santa's distance 
 
 ```
 santa-tracker-local-ai/
-├── santa-tracker.html    # Main application (standalone React app)
-├── santa-tracker.jsx     # React component source (for developers)
-├── server.py            # Python HTTP server with Ollama proxy
-└── README.md            # This file
+├── santa-tracker.html       # Main application (complete React app)
+├── server.py               # Unified HTTP server with Ollama proxy & config management
+├── config/                 # Configuration directory
+│   └── santa-config.json   # AI provider and app configuration
+├── js/                     # JavaScript modules
+│   ├── SoundManager.js     # Audio system with Christmas sounds
+│   ├── LanguageManager.js  # Multi-language support
+│   ├── ReindeerManager.js  # Reindeer team management
+│   ├── WeatherManager.js   # Dynamic weather system
+│   └── ChimneySafetyManager.js # Safety tips and guidelines
+└── README.md              # This file
 ```
 
 ## 🔧 Troubleshooting
