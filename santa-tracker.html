@@ -167,19 +167,22 @@
 <body>
     <div id="root"></div>
 
-    <!-- Load configuration modules as modules with defer to ensure proper loading order -->
-    <script type="module" defer src="js/SoundManager.js"></script>
-    <script type="module" defer src="js/LanguageManager.js"></script>
-    <script type="module" defer src="js/ReindeerManager.js"></script>
-    <script type="module" defer src="js/WeatherManager.js"></script>
-    <script type="module" defer src="js/ChimneySafetyManager.js"></script>
-    <script type="module" defer>
-        // Import managers
-        import soundManager from './js/SoundManager.js';
-        import languageManager from './js/LanguageManager.js';
-        import reindeerManager from './js/ReindeerManager.js';
-        import weatherManager from './js/WeatherManager.js';
-        import chimneySafetyManager from './js/ChimneySafetyManager.js';
+    <!-- Load configuration scripts in order -->
+    <script>
+        // Placeholder for managers - will be set by individual scripts
+        window.soundManager = null;
+        window.languageManager = null;
+        window.reindeerManager = null;
+        window.weatherManager = null;
+        window.chimneySafetyManager = null;
+    </script>
+    <script src="js/SoundManager.js"></script>
+    <script src="js/LanguageManager.js"></script>
+    <script src="js/ReindeerManager.js"></script>
+    <script src="js/WeatherManager.js"></script>
+    <script src="js/ChimneySafetyManager.js"></script>
+    <script>
+        // Managers are now available as global variables
 
         // Configuration Manager
         class ConfigManager {

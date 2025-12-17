@@ -373,4 +373,5 @@ class ReindeerManager {
 // Create and export singleton instance
 const reindeerManager = new ReindeerManager();
 
-export default reindeerManager;
+// Make available globally
+window.reindeerManager = reindeerManager;

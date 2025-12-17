@@ -338,4 +338,5 @@ Be creative, fun, and maintain the magical Christmas spirit!`;
 // Create and export singleton instance
 const languageManager = new LanguageManager();
 
-export default languageManager;
+// Make available globally
+window.languageManager = languageManager;

@@ -289,4 +289,5 @@ const soundManager = new SoundManager();
 // Enable audio on user interaction
 soundManager.enableOnUserInteraction();
 
-export default soundManager;
+// Make available globally
+window.soundManager = soundManager;

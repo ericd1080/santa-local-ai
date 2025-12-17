@@ -405,4 +405,5 @@ class ChimneySafetyManager {
 // Create and export singleton instance
 const chimneySafetyManager = new ChimneySafetyManager();
 
-export default chimneySafetyManager;
+// Make available globally
+window.chimneySafetyManager = chimneySafetyManager;

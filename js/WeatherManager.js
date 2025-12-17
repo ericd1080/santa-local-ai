@@ -430,4 +430,5 @@ class WeatherManager {
 // Create and export singleton instance
 const weatherManager = new WeatherManager();
 
-export default weatherManager;
+// Make available globally
+window.weatherManager = weatherManager;
