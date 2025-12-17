@@ -165,7 +165,7 @@
     </style>
 </head>
 <body>
-    <div id="root"></div>
+    <div id="root">Loading Santa Tracker...</div>
 
     <!-- Load configuration scripts in order -->
     <script>
@@ -557,8 +557,20 @@
     </script>
 
     <script type="text/babel">
+        // Wait for all dependencies to be ready
+        if (typeof React === 'undefined') {
+            console.error('React is not loaded!');
+        }
+        if (typeof ReactDOM === 'undefined') {
+            console.error('ReactDOM is not loaded!');
+        }
+        if (typeof lucide === 'undefined') {
+            console.error('Lucide is not loaded!');
+        }
+
         const { useState, useEffect } = React;
-        const { Settings, AlertTriangle, MapPin, Clock, Gift, X, Globe, Heart, Trash2, Users, Cloud, CloudRain, Sun, Wind, Thermometer, Eye, Shield, CheckCircle, Home } = lucide;
+        // Removed problematic lucide destructuring - using emoji/text icons instead
+        // const { Settings, AlertTriangle, MapPin, Clock, Gift, X, Globe, Heart, Trash2, Users, Cloud, CloudRain, Sun, Wind, Thermometer, Eye, Shield, CheckCircle, Home } = lucide || {};
 
         // Reindeer Panel component
         function ReindeerPanel({ isVisible, onClose, reindeerTeam, teamStatus }) {
@@ -575,7 +587,7 @@
                                 onClick={() => onClose(false)}
                                 className="text-white hover:text-gray-200 transition-colors"
                             >
-                                <X size={24} />
+                                <span style={{fontSize: '24px'}}>❌</span>
                             </button>
                         </div>
 
@@ -698,9 +710,9 @@
 
             const getWeatherIcon = (type) => {
                 const icons = {
-                    'clear': <Sun size={20} className="text-yellow-500" />,
-                    'cloudy': <Cloud size={20} className="text-gray-500" />,
-                    'rain': <CloudRain size={20} className="text-blue-500" />,
+                    'clear': <span style={{fontSize: '20px', color: '#eab308'}}>☀️</span>,
+                    'cloudy': <span style={{fontSize: '20px', color: '#6b7280'}}>☁️</span>,
+                    'rain': <span style={{fontSize: '20px', color: '#3b82f6'}}>🌧️</span>,
                     'snow': '❄️',
                     'blizzard': '🌨️',
                     'storm': '⛈️',
@@ -708,9 +720,9 @@
                     'aurora': '🌌',
                     'sandstorm': '🌪️',
                     'hot': '🔥',
-                    'windy': <Wind size={20} className="text-gray-600" />
+                    'windy': <span style={{fontSize: '20px', color: '#4b5563'}}>💨</span>
                 };
-                return icons[type] || <Cloud size={20} />;
+                return icons[type] || <span style={{fontSize: '20px'}}>☁️</span>;
             };
 
             const getDifficultyColor = (difficulty) => {
@@ -732,7 +744,7 @@
                                 onClick={() => onClose(false)}
                                 className="text-white hover:text-gray-200 transition-colors"
                             >
-                                <X size={24} />
+                                <span style={{fontSize: '24px'}}>❌</span>
                             </button>
                         </div>
 
@@ -758,14 +770,14 @@
                                                 <div className="flex items-center justify-between">
                                                     <span className="font-medium text-gray-700">Temperature:</span>
                                                     <div className="flex items-center space-x-2">
-                                                        <Thermometer size={16} />
+                                                        <span style={{fontSize: '16px'}}>🌡️</span>
                                                         <span>{Math.round(currentWeather.temperature)}°C</span>
                                                     </div>
                                                 </div>
                                                 <div className="flex items-center justify-between">
                                                     <span className="font-medium text-gray-700">Visibility:</span>
                                                     <div className="flex items-center space-x-2">
-                                                        <Eye size={16} />
+                                                        <span style={{fontSize: '16px'}}>👁️</span>
                                                         <span className="capitalize">{currentWeather.visibility}</span>
                                                     </div>
                                                 </div>
@@ -774,7 +786,7 @@
                                                 <div className="flex items-center justify-between">
                                                     <span className="font-medium text-gray-700">Wind Speed:</span>
                                                     <div className="flex items-center space-x-2">
-                                                        <Wind size={16} />
+                                                        <span style={{fontSize: '16px'}}>💨</span>
                                                         <span>{currentWeather.windSpeed} km/h</span>
                                                     </div>
                                                 </div>
@@ -917,7 +929,7 @@
                                 onClick={() => onClose(false)}
                                 className="text-white hover:text-gray-200 transition-colors"
                             >
-                                <X size={24} />
+                                <span style={{fontSize: '24px'}}>❌</span>
                             </button>
                         </div>
 
@@ -1086,14 +1098,14 @@
                                 onClick={() => onClose(false)}
                                 className="text-white hover:text-gray-200 transition-colors"
                             >
-                                <X size={24} />
+                                <span style={{fontSize: '24px'}}>❌</span>
                             </button>
                         </div>
 
                         <div className="p-6 overflow-y-auto max-h-[60vh]">
                             {favorites.length === 0 ? (
                                 <div className="text-center py-8">
-                                    <Heart size={48} className="mx-auto text-gray-300 mb-4" />
+                                    <span style={{fontSize: '48px', color: '#d1d5db', display: 'block', textAlign: 'center', marginBottom: '16px'}}>💝</span>
                                     <p className="text-gray-500 mb-2">No favorite messages yet!</p>
                                     <p className="text-sm text-gray-400">
                                         Click the ⭐ button next to Santa messages to save your favorites.
@@ -1119,7 +1131,7 @@
                                                     className="text-red-500 hover:text-red-700 transition-colors p-1 rounded-full hover:bg-red-100"
                                                     title="Remove from favorites"
                                                 >
-                                                    <Trash2 size={16} />
+                                                    <span style={{fontSize: '16px'}}>🗑️</span>
                                                 </button>
                                             </div>
                                             <p className="text-gray-700 leading-relaxed italic">
@@ -1159,7 +1171,7 @@
                                 onClick={() => onClose(false)}
                                 className="text-white hover:text-gray-200 transition-colors"
                             >
-                                <X size={24} />
+                                <span style={{fontSize: '24px'}}>❌</span>
                             </button>
                         </div>
 
@@ -1220,7 +1232,7 @@
                                 onClick={() => onClose(false)}
                                 className="text-white hover:text-gray-200 transition-colors"
                             >
-                                <X size={24} />
+                                <span style={{fontSize: '24px'}}>❌</span>
                             </button>
                         </div>
 
@@ -1298,7 +1310,7 @@
                         className="fixed bottom-4 right-4 bg-red-600 hover:bg-red-700 text-white p-3 rounded-full shadow-lg transition-all transform hover:scale-105"
                         title="Settings not available in simple mode"
                     >
-                        <Settings size={24} />
+                        <span style={{fontSize: '24px'}}>⚙️</span>
                     </button>
                 );
             }
@@ -2109,7 +2121,7 @@
                     return (
                         <div className="bg-yellow-50 border-l-4 border-yellow-400 p-3 mb-4">
                             <div className="flex">
-                                <AlertTriangle className="w-5 h-5 text-yellow-400 mr-2" />
+                                <span style={{fontSize: '20px', color: '#fbbf24', marginRight: '8px'}}>⚠️</span>
                                 <div>
                                     <p className="text-sm text-yellow-700 font-medium">Configuration Issue</p>
                                     <p className="text-xs text-yellow-600">
@@ -2186,14 +2198,14 @@
                                         className="bg-white bg-opacity-20 hover:bg-opacity-30 text-white p-3 rounded-full transition-all transform hover:scale-105"
                                         title={`Language: ${window.languageManager.getLanguageNativeName(currentLanguage)}`}
                                     >
-                                        <Globe size={24} />
+                                        <span style={{fontSize: '24px'}}>🌍</span>
                                     </button>
                                     <button
                                         onClick={() => setShowFavorites(true)}
                                         className="bg-white bg-opacity-20 hover:bg-opacity-30 text-white p-3 rounded-full transition-all transform hover:scale-105 relative"
                                         title="Favorite Messages"
                                     >
-                                        <Heart size={24} />
+                                        <span style={{fontSize: '24px'}}>❤️</span>
                                         {favoriteMessages.length > 0 && (
                                             <span className="absolute -top-1 -right-1 bg-red-500 text-white text-xs rounded-full w-5 h-5 flex items-center justify-center">
                                                 {favoriteMessages.length}
@@ -2238,7 +2250,7 @@
                                         className="bg-white bg-opacity-20 hover:bg-opacity-30 text-white p-3 rounded-full transition-all transform hover:scale-105 relative"
                                         title={`Safety Tips: ${currentSafetyTip?.title || 'Loading...'}`}
                                     >
-                                        <Shield size={24} />
+                                        <span style={{fontSize: '24px'}}>🛡️</span>
                                         {currentSafetyTip?.severity === 'critical' && (
                                             <span className="absolute -top-1 -right-1 bg-red-500 text-white text-xs rounded-full w-5 h-5 flex items-center justify-center">
                                                 !
@@ -2250,7 +2262,7 @@
                                         className="bg-white bg-opacity-20 hover:bg-opacity-30 text-white p-3 rounded-full transition-all transform hover:scale-105"
                                         title="Open Configuration"
                                     >
-                                        <Settings size={24} />
+                                        <span style={{fontSize: '24px'}}>⚙️</span>
                                     </button>
                                 </div>
                             </div>
@@ -2297,7 +2309,7 @@
                         {/* Location Permission */}
                         {locationPermission === 'prompt' && (
                             <div className="bg-white rounded-2xl p-8 mb-6 shadow-xl text-center">
-                                <MapPin className="w-16 h-16 mx-auto mb-4 text-red-600" />
+                                <span style={{fontSize: '64px', color: '#dc2626', display: 'block', textAlign: 'center', marginBottom: '16px'}}>📍</span>
                                 <h2 className="text-2xl font-bold mb-4 text-gray-800">
                                     See Santa's Distance from You!
                                 </h2>
@@ -2327,7 +2339,7 @@
                                 <div className="grid md:grid-cols-2 gap-6 mb-6">
                                     <div className="bg-gradient-to-br from-red-500 to-red-600 rounded-xl p-6 text-white">
                                         <div className="flex items-center mb-2">
-                                            <Clock className="w-6 h-6 mr-2" />
+                                            <span style={{fontSize: '24px', marginRight: '8px'}}>🕐</span>
                                             <h3 className="text-lg font-semibold">Status</h3>
                                         </div>
                                         <p className="text-3xl font-bold">{santaStats.status}</p>
@@ -2336,7 +2348,7 @@
                                     {santaStats.distance !== undefined && (
                                         <div className="bg-gradient-to-br from-green-500 to-green-600 rounded-xl p-6 text-white">
                                             <div className="flex items-center mb-2">
-                                                <MapPin className="w-6 h-6 mr-2" />
+                                                <span style={{fontSize: '24px', marginRight: '8px'}}>📍</span>
                                                 <h3 className="text-lg font-semibold">Distance</h3>
                                             </div>
                                             <p className="text-3xl font-bold">
@@ -2349,7 +2361,7 @@
                                     {santaStats.giftsDelivered > 0 && (
                                         <div className="bg-gradient-to-br from-blue-500 to-blue-600 rounded-xl p-6 text-white">
                                             <div className="flex items-center mb-2">
-                                                <Gift className="w-6 h-6 mr-2" />
+                                                <span style={{fontSize: '24px', marginRight: '8px'}}>🎁</span>
                                                 <h3 className="text-lg font-semibold">Gifts Delivered</h3>
                                             </div>
                                             <p className="text-3xl font-bold">
@@ -2361,7 +2373,7 @@
                                     {santaStats.timeUntil !== undefined && santaStats.timeUntil > 0 && (
                                         <div className="bg-gradient-to-br from-purple-500 to-purple-600 rounded-xl p-6 text-white">
                                             <div className="flex items-center mb-2">
-                                                <Clock className="w-6 h-6 mr-2" />
+                                                <span style={{fontSize: '24px', marginRight: '8px'}}>🕐</span>
                                                 <h3 className="text-lg font-semibold">Time Until Arrival</h3>
                                             </div>
                                             <p className="text-3xl font-bold">
@@ -2649,8 +2661,24 @@
             );
         }
 
-        const root = ReactDOM.createRoot(document.getElementById('root'));
-        root.render(<SantaTrackerEnhanced />);
+        try {
+            console.log('🎅 Starting Santa Tracker Enhanced...');
+            const root = ReactDOM.createRoot(document.getElementById('root'));
+            root.render(<SantaTrackerEnhanced />);
+            console.log('✅ Santa Tracker Enhanced mounted successfully!');
+        } catch (error) {
+            console.error('❌ Failed to mount Santa Tracker:', error);
+            document.getElementById('root').innerHTML = `
+                <div style="padding: 40px; color: red; text-align: center; font-family: Arial;">
+                    <h1>🎅 Santa Tracker Error</h1>
+                    <p><strong>Error:</strong> ${error.message}</p>
+                    <p>Check browser console for details.</p>
+                    <pre style="text-align: left; background: #f5f5f5; padding: 10px; border-radius: 5px;">
+${error.stack}
+                    </pre>
+                </div>
+            `;
+        }
     </script>
 </body>
 </html>

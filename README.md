@@ -208,6 +208,27 @@ which ollama
 # If not found, install from https://ollama.ai/
 ```
 
+## 📁 Repository Structure
+
+```
+santa-local-ai/
+├── santa-tracker.html          # Main application (React + AI)
+├── server.py                   # Local development server
+├── favicon.ico                 # Site icon
+├── config/
+│   └── santa-config.json       # Configuration settings
+├── js/
+│   ├── SoundManager.js         # Audio system
+│   ├── LanguageManager.js      # Multi-language support
+│   ├── ReindeerManager.js      # Reindeer team tracking
+│   ├── WeatherManager.js       # Weather conditions
+│   └── ChimneySafetyManager.js # Safety tips system
+├── s1.png, s2.png             # Demo screenshots
+├── README.md                  # This file
+├── QUICKSTART.md              # Quick setup guide
+└── CONFIGURATION_GUIDE.md     # Advanced configuration
+```
+
 ## 🛠️ Development
 
 The app is built with:
