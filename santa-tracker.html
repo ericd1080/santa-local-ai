@@ -10,6 +10,13 @@
     <script src="https://unpkg.com/@babel/standalone/babel.min.js"></script>
     <script src="https://cdn.tailwindcss.com"></script>
     <script src="https://unpkg.com/lucide@latest/dist/umd/lucide.js"></script>
+    <!-- Ensure all CDN dependencies are loaded before modules -->
+    <script>
+        // Wait for all external dependencies to load
+        window.addEventListener('load', function() {
+            console.log('📚 All external dependencies loaded');
+        });
+    </script>
     <style>
         @keyframes twinkle {
             0%, 100% { opacity: 0.3; }
@@ -160,13 +167,13 @@
 <body>
     <div id="root"></div>
 
-    <!-- Load configuration modules as modules -->
-    <script type="module" src="js/SoundManager.js"></script>
-    <script type="module" src="js/LanguageManager.js"></script>
-    <script type="module" src="js/ReindeerManager.js"></script>
-    <script type="module" src="js/WeatherManager.js"></script>
-    <script type="module" src="js/ChimneySafetyManager.js"></script>
-    <script type="module">
+    <!-- Load configuration modules as modules with defer to ensure proper loading order -->
+    <script type="module" defer src="js/SoundManager.js"></script>
+    <script type="module" defer src="js/LanguageManager.js"></script>
+    <script type="module" defer src="js/ReindeerManager.js"></script>
+    <script type="module" defer src="js/WeatherManager.js"></script>
+    <script type="module" defer src="js/ChimneySafetyManager.js"></script>
+    <script type="module" defer>
         // Import managers
         import soundManager from './js/SoundManager.js';
         import languageManager from './js/LanguageManager.js';
