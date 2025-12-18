@@ -2532,10 +2532,9 @@
                                                     }`}
                                                     title={isMessageFavorited(santaMessage) ? "Remove from favorites" : "Add to favorites"}
                                                 >
-                                                    <Heart
-                                                        size={20}
-                                                        fill={isMessageFavorited(santaMessage) ? 'currentColor' : 'none'}
-                                                    />
+                                                    <span style={{fontSize: '20px'}}>
+                                                        {isMessageFavorited(santaMessage) ? '❤️' : '🤍'}
+                                                    </span>
                                                 </button>
                                             </div>
                                         </div>
