@@ -19,85 +19,7 @@ class WeatherManager {
             mountain: ['clear', 'snow', 'fog', 'windy']
         };
 
-        this.weatherDescriptions = {
-            clear: {
-                icon: '☀️',
-                description: 'Clear skies',
-                visibility: 'excellent',
-                difficulty: 'easy',
-                reindeerMood: 'happy'
-            },
-            cloudy: {
-                icon: '☁️',
-                description: 'Cloudy conditions',
-                visibility: 'good',
-                difficulty: 'easy',
-                reindeerMood: 'content'
-            },
-            snow: {
-                icon: '❄️',
-                description: 'Light snow',
-                visibility: 'good',
-                difficulty: 'moderate',
-                reindeerMood: 'excited'
-            },
-            blizzard: {
-                icon: '🌨️',
-                description: 'Heavy blizzard',
-                visibility: 'poor',
-                difficulty: 'challenging',
-                reindeerMood: 'determined'
-            },
-            rain: {
-                icon: '🌧️',
-                description: 'Steady rain',
-                visibility: 'moderate',
-                difficulty: 'moderate',
-                reindeerMood: 'focused'
-            },
-            storm: {
-                icon: '⛈️',
-                description: 'Thunderstorm',
-                visibility: 'poor',
-                difficulty: 'challenging',
-                reindeerMood: 'brave'
-            },
-            fog: {
-                icon: '🌫️',
-                description: 'Dense fog',
-                visibility: 'poor',
-                difficulty: 'challenging',
-                reindeerMood: 'confident'
-            },
-            aurora: {
-                icon: '🌌',
-                description: 'Northern Lights',
-                visibility: 'magical',
-                difficulty: 'easy',
-                reindeerMood: 'amazed'
-            },
-            sandstorm: {
-                icon: '🌪️',
-                description: 'Sandstorm',
-                visibility: 'poor',
-                difficulty: 'very challenging',
-                reindeerMood: 'determined'
-            },
-            hot: {
-                icon: '🔥',
-                description: 'Extreme heat',
-                visibility: 'hazy',
-                difficulty: 'moderate',
-                reindeerMood: 'tired'
-            },
-            windy: {
-                icon: '💨',
-                description: 'Strong winds',
-                visibility: 'good',
-                difficulty: 'moderate',
-                reindeerMood: 'energetic'
-            }
-        };
+        this.weatherDescriptions = this.getLocalizedWeatherDescriptions();
 
         this.regionInfo = {
             'North Pole': { type: 'arctic', temperature: -30, timezone: 'UTC' },
@@ -120,6 +42,244 @@ class WeatherManager {
 
         this.updateWeather();
         this.startWeatherUpdates();
+
+        // Listen for language changes to refresh content
+        if (window.languageManager) {
+            window.languageManager.addEventListener('language-changed', () => {
+                this.refreshWeatherDescriptions();
+            });
+        }
+    }
+
+    getCurrentLanguage() {
+        return window.languageManager ? window.languageManager.getCurrentLanguage() : 'en';
+    }
+
+    getLocalizedWeatherDescriptions() {
+        const currentLanguage = this.getCurrentLanguage();
+
+        const translations = {
+            en: {
+                clear: {
+                    icon: '☀️',
+                    description: 'Clear skies',
+                    visibility: 'excellent',
+                    difficulty: 'easy',
+                    reindeerMood: 'happy'
+                },
+                cloudy: {
+                    icon: '☁️',
+                    description: 'Cloudy conditions',
+                    visibility: 'good',
+                    difficulty: 'easy',
+                    reindeerMood: 'content'
+                },
+                snow: {
+                    icon: '❄️',
+                    description: 'Light snow',
+                    visibility: 'good',
+                    difficulty: 'moderate',
+                    reindeerMood: 'excited'
+                },
+                blizzard: {
+                    icon: '🌨️',
+                    description: 'Heavy blizzard',
+                    visibility: 'poor',
+                    difficulty: 'challenging',
+                    reindeerMood: 'determined'
+                },
+                rain: {
+                    icon: '🌧️',
+                    description: 'Steady rain',
+                    visibility: 'moderate',
+                    difficulty: 'moderate',
+                    reindeerMood: 'focused'
+                },
+                storm: {
+                    icon: '⛈️',
+                    description: 'Thunderstorm',
+                    visibility: 'poor',
+                    difficulty: 'challenging',
+                    reindeerMood: 'brave'
+                },
+                fog: {
+                    icon: '🌫️',
+                    description: 'Dense fog',
+                    visibility: 'poor',
+                    difficulty: 'challenging',
+                    reindeerMood: 'confident'
+                },
+                aurora: {
+                    icon: '🌌',
+                    description: 'Northern Lights',
+                    visibility: 'magical',
+                    difficulty: 'easy',
+                    reindeerMood: 'amazed'
+                },
+                sandstorm: {
+                    icon: '🌪️',
+                    description: 'Sandstorm',
+                    visibility: 'poor',
+                    difficulty: 'very challenging',
+                    reindeerMood: 'determined'
+                },
+                hot: {
+                    icon: '🔥',
+                    description: 'Extreme heat',
+                    visibility: 'hazy',
+                    difficulty: 'moderate',
+                    reindeerMood: 'tired'
+                },
+                windy: {
+                    icon: '💨',
+                    description: 'Strong winds',
+                    visibility: 'good',
+                    difficulty: 'moderate',
+                    reindeerMood: 'energetic'
+                }
+            },
+            ko: {
+                clear: {
+                    icon: '☀️',
+                    description: '맑은 하늘',
+                    visibility: '매우 좋음',
+                    difficulty: '쉬움',
+                    reindeerMood: '행복함'
+                },
+                cloudy: {
+                    icon: '☁️',
+                    description: '구름 낀 날씨',
+                    visibility: '좋음',
+                    difficulty: '쉬움',
+                    reindeerMood: '만족함'
+                },
+                snow: {
+                    icon: '❄️',
+                    description: '가벼운 눈',
+                    visibility: '좋음',
+                    difficulty: '보통',
+                    reindeerMood: '흥분함'
+                },
+                blizzard: {
+                    icon: '🌨️',
+                    description: '심한 눈보라',
+                    visibility: '나쁨',
+                    difficulty: '어려움',
+                    reindeerMood: '단호함'
+                },
+                rain: {
+                    icon: '🌧️',
+                    description: '꾸준한 비',
+                    visibility: '보통',
+                    difficulty: '보통',
+                    reindeerMood: '집중함'
+                },
+                storm: {
+                    icon: '⛈️',
+                    description: '뇌우',
+                    visibility: '나쁨',
+                    difficulty: '어려움',
+                    reindeerMood: '용감함'
+                },
+                fog: {
+                    icon: '🌫️',
+                    description: '짙은 안개',
+                    visibility: '나쁨',
+                    difficulty: '어려움',
+                    reindeerMood: '자신감'
+                },
+                aurora: {
+                    icon: '🌌',
+                    description: '오로라',
+                    visibility: '마법적',
+                    difficulty: '쉬움',
+                    reindeerMood: '놀라움'
+                },
+                sandstorm: {
+                    icon: '🌪️',
+                    description: '모래 폭풍',
+                    visibility: '나쁨',
+                    difficulty: '매우 어려움',
+                    reindeerMood: '단호함'
+                },
+                hot: {
+                    icon: '🔥',
+                    description: '극한 더위',
+                    visibility: '흐림',
+                    difficulty: '보통',
+                    reindeerMood: '지침'
+                },
+                windy: {
+                    icon: '💨',
+                    description: '강한 바람',
+                    visibility: '좋음',
+                    difficulty: '보통',
+                    reindeerMood: '활기참'
+                }
+            }
+        };
+
+        return translations[currentLanguage] || translations['en'];
+    }
+
+    refreshWeatherDescriptions() {
+        this.weatherDescriptions = this.getLocalizedWeatherDescriptions();
+        // Update current weather with new descriptions if exists
+        if (this.currentWeather) {
+            this.updateWeather();
+        }
+        this.notifyListeners('weather-updated', this.currentWeather);
+        console.log('✅ WeatherManager: Refreshed weather descriptions for language change');
+    }
+
+    getLocalizedRegionName(regionKey) {
+        const currentLanguage = this.getCurrentLanguage();
+
+        const regionTranslations = {
+            en: {
+                'North Pole': 'North Pole',
+                'Arctic Circle': 'Arctic Circle',
+                'Greenland': 'Greenland',
+                'Iceland': 'Iceland',
+                'Scandinavia': 'Scandinavia',
+                'Russia': 'Russia',
+                'China': 'China',
+                'Japan': 'Japan',
+                'Australia': 'Australia',
+                'Pacific Islands': 'Pacific Islands',
+                'New Zealand': 'New Zealand',
+                'Antarctica': 'Antarctica',
+                'South America': 'South America',
+                'Africa': 'Africa',
+                'Europe': 'Europe',
+                'North America': 'North America',
+                'Himalayas': 'Himalayas',
+                'Unknown Region': 'Unknown Region'
+            },
+            ko: {
+                'North Pole': '북극',
+                'Arctic Circle': '북극권',
+                'Greenland': '그린란드',
+                'Iceland': '아이슬란드',
+                'Scandinavia': '스칸디나비아',
+                'Russia': '러시아',
+                'China': '중국',
+                'Japan': '일본',
+                'Australia': '호주',
+                'Pacific Islands': '태평양 섬들',
+                'New Zealand': '뉴질랜드',
+                'Antarctica': '남극대륙',
+                'South America': '남미',
+                'Africa': '아프리카',
+                'Europe': '유럽',
+                'North America': '북미',
+                'Himalayas': '히말라야',
+                'Unknown Region': '알 수 없는 지역'
+            }
+        };
+
+        const translations = regionTranslations[currentLanguage] || regionTranslations['en'];
+        return translations[regionKey] || regionKey;
     }
 
     startWeatherUpdates() {
@@ -167,7 +327,7 @@ class WeatherManager {
         const christmasDay = new Date(now.getFullYear(), 11, 25, 6, 0, 0);
 
         if (now < christmasEve) {
-            return { lat: 90, lon: 0, area: 'North Pole' };
+            return { lat: 90, lon: 0, area: this.getLocalizedRegionName('North Pole') };
         } else if (now >= christmasEve && now < christmasDay) {
             // Santa is traveling westward around the world
             const totalHours = 12; // 12 hour delivery window
@@ -181,25 +341,28 @@ class WeatherManager {
             const area = this.getAreaFromCoordinates(lat, lon);
             return { lat, lon, area };
         } else {
-            return { lat: 90, lon: 0, area: 'North Pole' };
+            return { lat: 90, lon: 0, area: this.getLocalizedRegionName('North Pole') };
         }
     }
 
     getAreaFromCoordinates(lat, lon) {
         // Rough area determination based on coordinates
-        if (lat > 70) return 'Arctic Circle';
-        if (lon > 100 && lon < 150 && lat > 20) return 'China';
-        if (lon > 130 && lon < 150 && lat > 25 && lat < 50) return 'Japan';
-        if (lon > 110 && lon < 180 && lat < 0) return 'Australia';
-        if (lon > -180 && lon < -120 && lat < 0) return 'Pacific Islands';
-        if (lon > 170 || lon < -165) return 'New Zealand';
-        if (lon > -80 && lon < -30 && lat < 0) return 'South America';
-        if (lon > -20 && lon < 50 && lat > 0 && lat < 30) return 'Africa';
-        if (lon > -10 && lon < 40 && lat > 35) return 'Europe';
-        if (lon > -130 && lon < -60 && lat > 25) return 'North America';
-        if (lon > 70 && lon < 100 && lat > 25) return 'Himalayas';
-        if (lat > 60) return 'Scandinavia';
-        return 'Unknown Region';
+        let regionKey = 'Unknown Region';
+
+        if (lat > 70) regionKey = 'Arctic Circle';
+        else if (lon > 100 && lon < 150 && lat > 20) regionKey = 'China';
+        else if (lon > 130 && lon < 150 && lat > 25 && lat < 50) regionKey = 'Japan';
+        else if (lon > 110 && lon < 180 && lat < 0) regionKey = 'Australia';
+        else if (lon > -180 && lon < -120 && lat < 0) regionKey = 'Pacific Islands';
+        else if (lon > 170 || lon < -165) regionKey = 'New Zealand';
+        else if (lon > -80 && lon < -30 && lat < 0) regionKey = 'South America';
+        else if (lon > -20 && lon < 50 && lat > 0 && lat < 30) regionKey = 'Africa';
+        else if (lon > -10 && lon < 40 && lat > 35) regionKey = 'Europe';
+        else if (lon > -130 && lon < -60 && lat > 25) regionKey = 'North America';
+        else if (lon > 70 && lon < 100 && lat > 25) regionKey = 'Himalayas';
+        else if (lat > 60) regionKey = 'Scandinavia';
+
+        return this.getLocalizedRegionName(regionKey);
     }
 
     getNearestRegion(location) {

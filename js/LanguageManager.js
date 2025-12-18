@@ -31,7 +31,9 @@ class LanguageManager {
             'button.disableSound': 'Disable Sound Effects',
 
             // Santa Stats
+            'stats.status': 'Status',
             'stats.distance': 'Distance from Santa',
+            'stats.fromYourLocation': 'from your location',
             'stats.giftsDelivered': 'Gifts Delivered',
             'stats.timeUntilArrival': 'Time Until Arrival',
             'stats.hours': 'hour',
@@ -39,13 +41,15 @@ class LanguageManager {
 
             // Santa Status Messages
             'status.preparing': 'Preparing at the North Pole',
-            'status.delivering': 'Delivering presents around the world!',
-            'status.finished': 'Christmas deliveries complete!',
-            'status.hoursAway': 'Santa is {hours} hour{plural} away!',
+            'status.delivering': 'Out for delivery!',
+            'status.visited': 'Santa has visited your area!',
+            'status.finished': 'Back at the North Pole',
+            'status.hoursAway': 'Santa is {hours} {hoursText} away!',
 
             // Location Messages
             'location.requesting': 'Requesting your location...',
             'location.found': 'Your location: {lat}°, {lon}°',
+            'location.yourLocation': 'Your location',
             'location.tracking': 'Santa is tracking your area! Make sure you\'re on the nice list! 🎁',
             'location.error': 'Unable to get location',
             'location.denied': 'Location access denied',
@@ -101,7 +105,9 @@ class LanguageManager {
             'button.disableSound': '음향 효과 비활성화',
 
             // Santa Stats
+            'stats.status': '상태',
             'stats.distance': '산타와의 거리',
+            'stats.fromYourLocation': '당신의 위치에서',
             'stats.giftsDelivered': '배달된 선물',
             'stats.timeUntilArrival': '도착까지 남은 시간',
             'stats.hours': '시간',
@@ -109,13 +115,15 @@ class LanguageManager {
 
             // Santa Status Messages
             'status.preparing': '북극에서 준비 중',
-            'status.delivering': '전세계에 선물을 배달하고 있습니다!',
-            'status.finished': '크리스마스 배달 완료!',
-            'status.hoursAway': '산타가 {hours}시간 후에 도착합니다!',
+            'status.delivering': '배달 중입니다!',
+            'status.visited': '산타가 당신의 지역을 방문했습니다!',
+            'status.finished': '북극으로 돌아왔습니다',
+            'status.hoursAway': '산타가 {hours}{hoursText} 후에 도착합니다!',
 
             // Location Messages
             'location.requesting': '위치를 요청하고 있습니다...',
             'location.found': '당신의 위치: {lat}°, {lon}°',
+            'location.yourLocation': '당신의 위치',
             'location.tracking': '산타가 당신의 지역을 추적하고 있습니다! 착한 아이 목록에 있는지 확인하세요! 🎁',
             'location.error': '위치를 가져올 수 없습니다',
             'location.denied': '위치 접근이 거부되었습니다',

@@ -1156,6 +1156,114 @@
             );
         }
 
+        // Naughty List Manager component
+        function NaughtyListManager({ isVisible, onClose, naughtyList, onAdd, onRemove, currentLanguage, newName, setNewName }) {
+            if (!isVisible) return null;
+
+            return (
+                <div className="fixed inset-0 bg-black bg-opacity-50 z-50 flex items-center justify-center p-4">
+                    <div className="bg-white rounded-xl shadow-2xl max-w-2xl w-full max-h-[80vh] overflow-hidden">
+                        <div className="bg-gradient-to-r from-red-600 to-red-800 text-white p-6 flex items-center justify-between rounded-t-xl">
+                            <h2 className="text-xl font-bold">
+                                📋 {currentLanguage === 'ko' ? '산타의 말썽꾸러기 목록 관리' : "Santa's Naughty List Manager"}
+                            </h2>
+                            <button
+                                onClick={() => onClose(false)}
+                                className="text-white hover:text-gray-200 transition-colors"
+                            >
+                                <span style={{fontSize: '24px'}}>❌</span>
+                            </button>
+                        </div>
+
+                        {/* Add New Name Section */}
+                        <div className="bg-gray-50 p-4 border-b">
+                            <div className="flex gap-2">
+                                <input
+                                    type="text"
+                                    value={newName}
+                                    onChange={(e) => setNewName(e.target.value)}
+                                    placeholder={currentLanguage === 'ko' ? '이름을 입력하세요...' : 'Enter name...'}
+                                    className="flex-1 px-4 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-red-500"
+                                    onKeyPress={(e) => e.key === 'Enter' && onAdd(newName)}
+                                />
+                                <button
+                                    onClick={() => onAdd(newName)}
+                                    disabled={!newName.trim()}
+                                    className="bg-red-600 hover:bg-red-700 text-white px-4 py-2 rounded-lg disabled:opacity-50 disabled:cursor-not-allowed"
+                                >
+                                    {currentLanguage === 'ko' ? '추가' : 'Add'}
+                                </button>
+                            </div>
+                            <p className="text-sm text-gray-600 mt-2">
+                                {currentLanguage === 'ko'
+                                    ? '말썽꾸러기 목록에 이름을 추가하면 항상 "말썽꾸러기"로 표시됩니다.'
+                                    : 'Names added to the naughty list will always be marked as "NAUGHTY".'}
+                            </p>
+                        </div>
+
+                        <div className="p-6 overflow-y-auto max-h-[50vh]">
+                            {naughtyList.length === 0 ? (
+                                <div className="text-center py-8">
+                                    <span style={{fontSize: '48px', color: '#d1d5db', display: 'block', textAlign: 'center', marginBottom: '16px'}}>😇</span>
+                                    <p className="text-gray-500 mb-2">
+                                        {currentLanguage === 'ko' ? '말썽꾸러기 목록이 비어있습니다!' : 'No names on the naughty list!'}
+                                    </p>
+                                    <p className="text-sm text-gray-400">
+                                        {currentLanguage === 'ko'
+                                            ? '모든 사람이 착하게 행동하고 있네요! 🎄'
+                                            : 'Everyone is being good! 🎄'}
+                                    </p>
+                                </div>
+                            ) : (
+                                <div className="space-y-4">
+                                    {naughtyList.map((entry) => (
+                                        <div
+                                            key={entry.id}
+                                            className="bg-gradient-to-br from-red-50 to-orange-50 rounded-xl p-4 border-2 border-red-200"
+                                        >
+                                            <div className="flex justify-between items-start mb-2">
+                                                <div className="flex items-center space-x-2">
+                                                    <span className="text-lg">😈</span>
+                                                    <div>
+                                                        <h3 className="font-bold text-gray-800">{entry.name}</h3>
+                                                        <div className="text-xs text-gray-500">
+                                                            {currentLanguage === 'ko' ? '추가됨: ' : 'Added: '}
+                                                            {new Date(entry.addedAt).toLocaleDateString()}
+                                                        </div>
+                                                    </div>
+                                                </div>
+                                                <button
+                                                    onClick={() => onRemove(entry.id)}
+                                                    className="text-red-500 hover:text-red-700 transition-colors p-1 rounded-full hover:bg-red-100"
+                                                    title={currentLanguage === 'ko' ? '목록에서 제거' : 'Remove from list'}
+                                                >
+                                                    <span style={{fontSize: '16px'}}>🗑️</span>
+                                                </button>
+                                            </div>
+                                            <p className="text-sm text-gray-600 italic">
+                                                {currentLanguage === 'ko'
+                                                    ? '이 이름은 항상 말썽꾸러기로 표시됩니다.'
+                                                    : 'This name will always be marked as naughty.'}
+                                            </p>
+                                        </div>
+                                    ))}
+                                </div>
+                            )}
+
+                            {naughtyList.length > 0 && (
+                                <div className="mt-6 text-center">
+                                    <p className="text-xs text-gray-500">
+                                        {naughtyList.length} {currentLanguage === 'ko' ? '명이 목록에 있습니다' : 'names on the list'} •
+                                        {currentLanguage === 'ko' ? ' 착하게 행동하면 선물을 받을 수 있어요!' : ' Be good to get presents!'}
+                                    </p>
+                                </div>
+                            )}
+                        </div>
+                    </div>
+                </div>
+            );
+        }
+
         // Language Selector component
         function LanguageSelector({ isVisible, onClose, currentLanguage, onLanguageChange }) {
             if (!isVisible) return null;
@@ -1366,6 +1474,7 @@
         function SantaTrackerEnhanced() {
             // Core state
             const [userLocation, setUserLocation] = useState(null);
+            const [userLocationName, setUserLocationName] = useState('');
             const [locationPermission, setLocationPermission] = useState('prompt');
             const [currentTime, setCurrentTime] = useState(new Date());
             const [santaStats, setSantaStats] = useState(null);
@@ -1392,6 +1501,11 @@
             const [niceListName, setNiceListName] = useState('');
             const [niceListResult, setNiceListResult] = useState(null);
             const [checkingNiceList, setCheckingNiceList] = useState(false);
+
+            // Naughty List Management state
+            const [customNaughtyList, setCustomNaughtyList] = useState([]);
+            const [showNaughtyListManager, setShowNaughtyListManager] = useState(false);
+            const [newNaughtyName, setNewNaughtyName] = useState('');
 
             // Language state
             const [currentLanguage, setCurrentLanguage] = useState('en');
@@ -1606,6 +1720,61 @@
                 return favoriteMessages.some(fav => fav.message === message);
             };
 
+            // Load custom naughty list from localStorage
+            useEffect(() => {
+                try {
+                    const savedNaughtyList = localStorage.getItem('santa-tracker-naughty-list');
+                    if (savedNaughtyList) {
+                        const parsed = JSON.parse(savedNaughtyList);
+                        setCustomNaughtyList(parsed);
+                        console.log('✅ Loaded custom naughty list from storage:', parsed.length);
+                    }
+                } catch (error) {
+                    console.warn('⚠️ Failed to load naughty list from localStorage:', error);
+                }
+            }, []);
+
+            const saveNaughtyListToStorage = (naughtyList) => {
+                try {
+                    localStorage.setItem('santa-tracker-naughty-list', JSON.stringify(naughtyList));
+                    console.log('✅ Naughty list saved to localStorage');
+                } catch (error) {
+                    console.warn('⚠️ Failed to save naughty list to localStorage:', error);
+                }
+            };
+
+            const addToNaughtyList = (name) => {
+                if (!name.trim()) return;
+
+                const naughtyEntry = {
+                    id: Date.now(),
+                    name: name.trim(),
+                    addedAt: new Date().toISOString()
+                };
+
+                const updatedList = [naughtyEntry, ...customNaughtyList];
+                setCustomNaughtyList(updatedList);
+                saveNaughtyListToStorage(updatedList);
+                setNewNaughtyName('');
+
+                soundManager.playGiftDrop();
+                console.log('📋 Added to naughty list:', name);
+            };
+
+            const removeFromNaughtyList = (id) => {
+                const updatedList = customNaughtyList.filter(entry => entry.id !== id);
+                setCustomNaughtyList(updatedList);
+                saveNaughtyListToStorage(updatedList);
+
+                soundManager.playHoHoHo();
+                console.log('✨ Removed from naughty list');
+            };
+
+            const isNameOnNaughtyList = (name) => {
+                return customNaughtyList.some(entry =>
+                    entry.name.toLowerCase() === name.toLowerCase().trim()
+                );
+            };
 
             const createGiftDrop = (isSpecial = false, customEmoji = null) => {
                 const regularGifts = ['🎁', '🎀', '📦', '🧸', '🍪', '🎨', '📚', '⚽', '🎮', '🪀'];
@@ -1797,10 +1966,29 @@
                     const data = await response.json();
                     const result = data.response || '';
 
-                    // Parse the result
+                    // Check if name is on custom naughty list first
+                    if (isNameOnNaughtyList(niceListName)) {
+                        const naughtyEntry = customNaughtyList.find(entry =>
+                            entry.name.toLowerCase() === niceListName.toLowerCase().trim()
+                        );
+                        setNiceListResult({
+                            name: niceListName,
+                            status: 'NAUGHTY',
+                            message: currentLanguage === 'ko'
+                                ? `${niceListName}님, 제가 만든 말썽꾸러기 목록에 있으시네요! 더 착하게 행동해야 크리스마스에 선물을 받을 수 있어요! 🎄`
+                                : `${niceListName}, you're on my custom Naughty List! Be good and you might get presents this Christmas! 🎄`,
+                            isCustom: true
+                        });
+                        soundManager.playGiftDrop();
+                        return;
+                    }
+
+                    // Parse the AI result
                     const lines = result.split('\n');
                     let status = 'NICE'; // Default to nice
-                    let message = `Ho ho ho! ${niceListName}, you're definitely on my Nice List this year!`;
+                    let message = currentLanguage === 'ko'
+                        ? `호호호! ${niceListName}님, 올해 착한 아이 목록에 확실히 있으시네요!`
+                        : `Ho ho ho! ${niceListName}, you're definitely on my Nice List this year!`;
 
                     for (const line of lines) {
                         if (line.startsWith('STATUS:')) {
@@ -1922,11 +2110,36 @@
 
                 if (navigator.geolocation) {
                     navigator.geolocation.getCurrentPosition(
-                        (position) => {
-                            setUserLocation({
+                        async (position) => {
+                            const location = {
                                 lat: position.coords.latitude,
                                 lon: position.coords.longitude
-                            });
+                            };
+                            setUserLocation(location);
+
+                            // Get human-readable location name
+                            try {
+                                const response = await fetch(`https://api.bigdatacloud.net/data/reverse-geocode-client?latitude=${location.lat}&longitude=${location.lon}&localityLanguage=${currentLanguage}`);
+                                const data = await response.json();
+
+                                const city = data.city || data.locality || data.principalSubdivision || '';
+                                const country = data.countryName || '';
+
+                                let locationName;
+                                if (city && country) {
+                                    locationName = `${city}, ${country}`;
+                                } else if (country) {
+                                    locationName = country;
+                                } else {
+                                    locationName = `${location.lat.toFixed(2)}°, ${location.lon.toFixed(2)}°`;
+                                }
+                                setUserLocationName(locationName);
+                                console.log('📍 Location obtained:', locationName);
+                            } catch (error) {
+                                console.warn('Reverse geocoding failed:', error);
+                                setUserLocationName(`${location.lat.toFixed(2)}°, ${location.lon.toFixed(2)}°`);
+                            }
+
                             setLocationPermission('granted');
 
                             // Play gift drop sound when location is successfully obtained
@@ -1957,31 +2170,32 @@
                 if (now < christmasEve) {
                     santaLon = -180;
                     santaLat = 90;
-                    status = "Preparing at the North Pole";
+                    status = window.languageManager.t('status.preparing');
                     timeUntil = Math.floor((christmasEve - now) / (1000 * 60 * 60));
                     giftsDelivered = 0;
                 } else if (now >= christmasEve && now < christmasDay) {
                     const progress = hoursIntoDelivery / totalDeliveryHours;
                     santaLon = 180 - (progress * 360);
                     santaLat = 45 + Math.sin(progress * Math.PI * 4) * 20;
-                    status = "Out for delivery!";
+                    status = window.languageManager.t('status.delivering');
                     giftsDelivered = Math.floor(progress * 2000000000);
 
                     if (userLocation) {
                         const userLon = userLocation.lon;
                         if (santaLon < userLon) {
-                            status = "Santa has visited your area!";
+                            status = window.languageManager.t('status.visited');
                         } else {
                             const lonDiff = santaLon - userLon;
                             const hoursAway = (lonDiff / 360) * totalDeliveryHours;
                             timeUntil = Math.max(0, Math.floor(hoursAway));
-                            status = `Santa is ${timeUntil} hour${timeUntil !== 1 ? 's' : ''} away!`;
+                            const hoursText = timeUntil !== 1 ? window.languageManager.t('stats.hoursPlural') : window.languageManager.t('stats.hours');
+                            status = window.languageManager.t('status.hoursAway', {hours: timeUntil, hoursText: hoursText});
                         }
                     }
                 } else {
                     santaLon = -180;
                     santaLat = 90;
-                    status = "Back at the North Pole";
+                    status = window.languageManager.t('status.finished');
                     giftsDelivered = 2000000000;
                 }
 
@@ -2046,18 +2260,36 @@
 
                         let context = '';
                         if (now < christmasEve) {
-                            context = 'Santa is at the North Pole preparing for Christmas Eve. The elves are busy wrapping presents.';
+                            context = currentLanguage === 'ko'
+                                ? '산타는 크리스마스 이브를 위해 북극에서 준비하고 있습니다. 엘프들이 선물을 포장하느라 바쁩니다.'
+                                : 'Santa is at the North Pole preparing for Christmas Eve. The elves are busy wrapping presents.';
                         } else if (now >= christmasEve && now < christmasDay) {
-                            context = `Santa is currently delivering presents around the world! ${
-                                santaStats?.distance
-                                    ? `He is about ${santaStats.distance.toLocaleString()} km away from the user's location.`
-                                    : 'He is making his way across the globe.'
-                            } ${santaStats?.giftsDelivered ? `He has delivered ${santaStats.giftsDelivered.toLocaleString()} gifts so far!` : ''}`;
+                            if (currentLanguage === 'ko') {
+                                context = `산타가 현재 전세계에 선물을 배달하고 있습니다! ${
+                                    santaStats?.distance
+                                        ? `산타는 당신의 위치에서 약 ${santaStats.distance.toLocaleString()}km 떨어져 있습니다.`
+                                        : '전 세계를 돌아다니고 있습니다.'
+                                } ${santaStats?.giftsDelivered ? `지금까지 ${santaStats.giftsDelivered.toLocaleString()}개의 선물을 배달했습니다!` : ''}`;
+                            } else {
+                                context = `Santa is currently delivering presents around the world! ${
+                                    santaStats?.distance
+                                        ? `He is about ${santaStats.distance.toLocaleString()} km away from the user's location.`
+                                        : 'He is making his way across the globe.'
+                                } ${santaStats?.giftsDelivered ? `He has delivered ${santaStats.giftsDelivered.toLocaleString()} gifts so far!` : ''}`;
+                            }
                         } else {
-                            context = 'Santa has finished his Christmas deliveries and is resting at the North Pole with the reindeer.';
+                            context = currentLanguage === 'ko'
+                                ? '산타가 크리스마스 배달을 마치고 순록들과 함께 북극에서 쉬고 있습니다.'
+                                : 'Santa has finished his Christmas deliveries and is resting at the North Pole with the reindeer.';
                         }
 
-                        prompt = `You are Santa Claus! Write a cheerful, warm message (2-3 sentences max) to someone tracking your journey. ${context} Be jolly, mention the reindeer if relevant, and keep it magical and brief. Use emojis sparingly (1-2 max). Don't use quotation marks.`;
+                        const santaPromptPrefix = window.languageManager.getSantaPromptPrefix();
+                        prompt = `${santaPromptPrefix}${context} 즐겁고 마법같은 분위기를 유지하고 간단명료하게 작성해주세요. 이모지는 적게 사용하세요 (최대 1-2개). 따옴표는 사용하지 마세요.`;
+
+                        // For English, use the original format
+                        if (currentLanguage !== 'ko') {
+                            prompt = `${santaPromptPrefix}${context} Be jolly, mention the reindeer if relevant, and keep it magical and brief. Use emojis sparingly (1-2 max). Don't use quotation marks.`;
+                        }
 
                         aiConfig = {
                             model: "llama3.2",
@@ -2267,6 +2499,18 @@
                                     >
                                         <span style={{fontSize: '24px'}}>⚙️</span>
                                     </button>
+                                    <button
+                                        onClick={() => setShowNaughtyListManager(true)}
+                                        className="bg-white bg-opacity-20 hover:bg-opacity-30 text-white p-3 rounded-full transition-all transform hover:scale-105 relative"
+                                        title={currentLanguage === 'ko' ? '말썽꾸러기 목록 관리' : 'Manage Naughty List'}
+                                    >
+                                        <span style={{fontSize: '24px'}}>📋</span>
+                                        {customNaughtyList.length > 0 && (
+                                            <span className="absolute -top-1 -right-1 bg-red-500 text-white text-xs rounded-full w-5 h-5 flex items-center justify-center">
+                                                {customNaughtyList.length}
+                                            </span>
+                                        )}
+                                    </button>
                                 </div>
                             </div>
                             <p className="text-blue-200 text-xl">{window.languageManager.t('app.subtitle')}</p>
@@ -2343,7 +2587,7 @@
                                     <div className="bg-gradient-to-br from-red-500 to-red-600 rounded-xl p-6 text-white">
                                         <div className="flex items-center mb-2">
                                             <span style={{fontSize: '24px', marginRight: '8px'}}>🕐</span>
-                                            <h3 className="text-lg font-semibold">Status</h3>
+                                            <h3 className="text-lg font-semibold">{window.languageManager.t('stats.status')}</h3>
                                         </div>
                                         <p className="text-3xl font-bold">{santaStats.status}</p>
                                     </div>
@@ -2352,12 +2596,12 @@
                                         <div className="bg-gradient-to-br from-green-500 to-green-600 rounded-xl p-6 text-white">
                                             <div className="flex items-center mb-2">
                                                 <span style={{fontSize: '24px', marginRight: '8px'}}>📍</span>
-                                                <h3 className="text-lg font-semibold">Distance</h3>
+                                                <h3 className="text-lg font-semibold">{window.languageManager.t('stats.distance')}</h3>
                                             </div>
                                             <p className="text-3xl font-bold">
                                                 {santaStats.distance.toLocaleString()} km
                                             </p>
-                                            <p className="text-sm opacity-90">from your location</p>
+                                            <p className="text-sm opacity-90">{window.languageManager.t('stats.fromYourLocation')}</p>
                                         </div>
                                     )}
 
@@ -2365,7 +2609,7 @@
                                         <div className="bg-gradient-to-br from-blue-500 to-blue-600 rounded-xl p-6 text-white">
                                             <div className="flex items-center mb-2">
                                                 <span style={{fontSize: '24px', marginRight: '8px'}}>🎁</span>
-                                                <h3 className="text-lg font-semibold">Gifts Delivered</h3>
+                                                <h3 className="text-lg font-semibold">{window.languageManager.t('stats.giftsDelivered')}</h3>
                                             </div>
                                             <p className="text-3xl font-bold">
                                                 {santaStats.giftsDelivered.toLocaleString()}
@@ -2377,10 +2621,10 @@
                                         <div className="bg-gradient-to-br from-purple-500 to-purple-600 rounded-xl p-6 text-white">
                                             <div className="flex items-center mb-2">
                                                 <span style={{fontSize: '24px', marginRight: '8px'}}>🕐</span>
-                                                <h3 className="text-lg font-semibold">Time Until Arrival</h3>
+                                                <h3 className="text-lg font-semibold">{window.languageManager.t('stats.timeUntilArrival')}</h3>
                                             </div>
                                             <p className="text-3xl font-bold">
-                                                {santaStats.timeUntil} hour{santaStats.timeUntil !== 1 ? 's' : ''}
+                                                {santaStats.timeUntil} {santaStats.timeUntil !== 1 ? window.languageManager.t('stats.hoursPlural') : window.languageManager.t('stats.hours')}
                                             </p>
                                         </div>
                                     )}
@@ -2389,10 +2633,10 @@
                                 {userLocation && (
                                     <div className="bg-blue-50 rounded-xl p-4 text-center">
                                         <p className="text-gray-700">
-                                            📍 Your location: {userLocation.lat.toFixed(2)}°, {userLocation.lon.toFixed(2)}°
+                                            📍 {window.languageManager.t('location.yourLocation')}: {userLocationName || `${userLocation.lat.toFixed(2)}°, ${userLocation.lon.toFixed(2)}°`}
                                         </p>
                                         <p className="text-gray-600 text-sm mt-1">
-                                            Santa is tracking your area! Make sure you're on the nice list! 🎁
+                                            {window.languageManager.t('location.tracking')}
                                         </p>
                                     </div>
                                 )}
@@ -2657,6 +2901,18 @@
                         currentTip={currentSafetyTip}
                         allTips={allSafetyTips}
                         categories={safetyCategories}
+                    />
+
+                    {/* Naughty List Manager */}
+                    <NaughtyListManager
+                        isVisible={showNaughtyListManager}
+                        onClose={setShowNaughtyListManager}
+                        naughtyList={customNaughtyList}
+                        onAdd={addToNaughtyList}
+                        onRemove={removeFromNaughtyList}
+                        currentLanguage={currentLanguage}
+                        newName={newNaughtyName}
+                        setNewName={setNewNaughtyName}
                     />
 
                 </div>
