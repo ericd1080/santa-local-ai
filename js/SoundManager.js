@@ -64,9 +64,9 @@ class SoundManager {
         if (!this.enabled || !this.audioContext) return;
 
         for (const [name, config] of Object.entries(this.soundConfig)) {
-            if (config.url && config.url.startsWith('data:')) {
-                // For data URLs, we'll use HTML5 Audio for simplicity
-                try {
+            try {
+                if (config.url && config.url.startsWith('data:')) {
+                    // For data URLs, we'll use HTML5 Audio for simplicity
                     const audio = new Audio();
                     audio.volume = config.volume || 0.5;
                     audio.loop = config.loop || false;
@@ -77,9 +77,21 @@ class SoundManager {
 
                     this.sounds.set(name, audio);
                     console.log(`✅ SoundManager: Loaded ${name}`);
-                } catch (error) {
-                    console.warn(`⚠️ SoundManager: Failed to load ${name}:`, error);
+                } else if (config.frequency) {
+                    // For frequency-based sounds (like notification), generate audio
+                    const audio = new Audio();
+                    audio.volume = config.volume || 0.5;
+                    audio.loop = config.loop || false;
+                    audio.preload = 'auto';
+
+                    // Generate audio based on frequency configuration
+                    audio.src = this.createToneDataURL([config.frequency], config.volume, config.duration);
+
+                    this.sounds.set(name, audio);
+                    console.log(`✅ SoundManager: Loaded ${name}`);
                 }
+            } catch (error) {
+                console.warn(`⚠️ SoundManager: Failed to load ${name}:`, error);
             }
         }
     }

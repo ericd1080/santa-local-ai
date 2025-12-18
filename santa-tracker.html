@@ -435,11 +435,78 @@
                 const fullContext = this.buildFullContext(context);
 
                 if (currentLanguage === 'ko') {
-                    // Korean Santa prompts
+                    // Korean Santa prompts with EXAMPLES - Show don't tell approach
                     const koreanPrompts = {
-                        preparing: "당신은 산타클로스입니다! 크리스마스 이브를 위해 북극에서 준비하는 따뜻하고 즐거운 한국어 메시지를 작성해주세요 (최대 2-3문장). 엘프들이 선물을 포장하느라 바쁩니다. 즐겁고 마법같은 분위기를 유지하고 간단명료하게 작성해주세요. 이모지는 적게 사용하세요 (최대 1-2개). 따옴표는 사용하지 마세요.",
-                        delivering: `당신은 산타클로스입니다! 전세계에 선물을 배달하고 있는 산타로서 따뜻하고 즐거운 한국어 메시지를 작성해주세요 (최대 2-3문장). ${fullContext.DISTANCE_CONTEXT || ''} ${fullContext.GIFTS_CONTEXT || ''} 즐겁고 순록에 대한 언급도 포함하며 마법같은 분위기를 유지하고 간단명료하게 작성해주세요. 이모지는 적게 사용하세요 (최대 1-2개). 따옴표는 사용하지 마세요.`,
-                        finished: "당신은 산타클로스입니다! 크리스마스 배달을 마치고 순록들과 함께 북극에서 쉬고 있는 따뜻하고 즐거운 한국어 메시지를 작성해주세요 (최대 2-3문장). 즐겁고 마법같은 분위기를 유지하고 간단명료하게 작성해주세요. 이모지는 적게 사용하세요 (최대 1-2개). 따옴표는 사용하지 마세요."
+                        preparing: `시스템: 당신은 순수 한국어로만 말하는 산타클로스입니다. 절대로 일본어, 중국어, 베트남어, 태국어, 러시아어, 영어 등 다른 언어를 섞지 마세요.
+
+좋은 예시 (오직 한국어):
+"호호호! 북극에서 크리스마스 이브 준비가 한창입니다. 엘프들이 선물 포장하느라 바쁘게 움직이고 있어요!"
+"순록들과 함께 전세계 착한 아이들을 위한 준비를 하고 있어요!"
+
+나쁜 예시 (절대 사용 금지):
+- "엘프들이です" (일본어 です)
+- "엘프들이だ" (일본어 だ)
+- "tất cả의 아이들" (베트남어 tất cả)
+- "happiness와 joy" (영어 happiness, joy)
+- "오래ingly" (영어 ingly 섞임)
+- "정말wonderful한" (영어 wonderful 섞임)
+- "children들" (영어 children 섞임)
+- "magical한" (영어 magical 섞임)
+- "的 크리스마스" (중국어 的)
+- "และ 선물들" (태국어 และ)
+- "и 순록들" (러시아어 и)
+
+경고: 위의 나쁜 예시처럼 다른 언어가 섞이면 즉시 중단됩니다.
+
+지시사항: 크리스마스 이브 준비 상황에 대한 따뜻한 메시지를 2-3문장으로 작성하세요. 오직 한국어 단어와 한국어 문법만 사용하세요.
+
+산타클로스의 메시지:`,
+                        delivering: `시스템: 당신은 순수 한국어로만 말하는 산타클로스입니다. 절대로 일본어, 중국어, 베트남어, 태국어, 러시아어, 영어 등 다른 언어를 섞지 마세요.
+
+좋은 예시 (오직 한국어):
+"호호호! 지금 전세계를 돌며 선물을 배달하고 있어요. 순록들과 함께 밤하늘을 날며 모든 착한 아이들에게 기쁨을 전하고 있답니다!"
+"루돌프와 순록 친구들이 열심히 달려서 곧 여러분 지역에도 도착할 거예요!"
+
+나쁜 예시 (절대 사용 금지):
+- "산타클로스가です" (일본어 です)
+- "모든 children들" (영어 children)
+- "happiness와 joy" (영어 happiness, joy)
+- "tất cả의 아이들" (베트남어 tất cả)
+- "wonderful한 여행" (영어 wonderful)
+- "magical한 순간" (영어 magical)
+- "的 선물들" (중국어 的)
+- "และ 기쁨" (태국어 และ)
+- "и 사랑" (러시아어 и)
+- "오래ingly 기다렸어요" (영어 ingly 섞임)
+
+경고: 위의 나쁜 예시처럼 다른 언어가 섞이면 즉시 중단됩니다.
+
+지시사항: 선물 배달 중인 상황에 대한 따뜻한 메시지를 2-3문장으로 작성하세요. ${fullContext.DISTANCE_CONTEXT || ''} ${fullContext.GIFTS_CONTEXT || ''} 순록 언급도 포함하세요. 오직 한국어 단어와 한국어 문법만 사용하세요.
+
+산타클로스의 메시지:`,
+                        finished: `시스템: 당신은 순수 한국어로만 말하는 산타클로스입니다. 절대로 일본어, 중국어, 베트남어, 태국어, 러시아어, 영어 등 다른 언어를 섞지 마세요.
+
+좋은 예시 (오직 한국어):
+"호호호! 모든 선물 배달을 마치고 순록들과 함께 북극으로 돌아왔어요. 올해도 정말 즐거운 크리스마스였답니다!"
+"착한 아이들의 밝은 웃음소리를 상상하며 따뜻한 마음으로 집에 왔어요!"
+
+나쁜 예시 (절대 사용 금지):
+- "크리스마스가です" (일본어 です)
+- "wonderful한 크리스마스" (영어 wonderful)
+- "모든 people들" (영어 people)
+- "tất cả complete" (베트남어 tất cả + 영어 complete)
+- "happiness가 넘쳐요" (영어 happiness)
+- "magical한 시간" (영어 magical)
+- "的 기쁨" (중국어 的)
+- "และ 평화" (태국어 และ)
+- "и 휴식" (러시아어 и)
+- "정말ly 좋았어요" (영어 ly 섞임)
+
+경고: 위의 나쁜 예시처럼 다른 언어가 섞이면 즉시 중단됩니다.
+
+지시사항: 배달을 마치고 쉬는 상황에 대한 따뜻한 메시지를 2-3문장으로 작성하세요. 오직 한국어 단어와 한국어 문법만 사용하세요.
+
+산타클로스의 메시지:`
                     };
                     return koreanPrompts[promptType] || koreanPrompts.preparing;
                 } else {
@@ -1720,6 +1787,10 @@
 
             const handleLanguageChange = (languageCode) => {
                 setCurrentLanguage(languageCode);
+                // Refresh reindeer data with new localization
+                if (window.reindeerManager) {
+                    window.reindeerManager.refreshLocalization();
+                }
                 console.log(`Language changed to: ${languageCode}`);
             };
 
@@ -1969,23 +2040,54 @@
                     if (configLoaded) {
                         const modelConfig = window.configManager.getCurrentModel();
                         if (modelConfig) {
+                            // Korean-specific configuration for Nice List
+                            if (currentLanguage === 'ko') {
+                                aiConfig = {
+                                    model: modelConfig.name,
+                                    options: {
+                                        temperature: 0.1,     // ULTRA low for Korean consistency
+                                        top_p: 0.6,          // Very focused
+                                        top_k: 20,           // Limited vocabulary
+                                        repeat_penalty: 1.3, // Higher repetition penalty
+                                        num_predict: 60,     // Very short responses
+                                        stop: ["です", "tất cả", "happiness", "joy", "wonderful", "children", "magic", "ingly"], // Stop on foreign words
+                                        ...modelConfig.parameters
+                                    }
+                                };
+                            } else {
+                                aiConfig = {
+                                    model: modelConfig.name,
+                                    options: {
+                                        temperature: 0.9, // Higher creativity for fun responses
+                                        num_predict: 100,
+                                        ...modelConfig.parameters
+                                    }
+                                };
+                            }
+                        }
+                    } else {
+                        // Fallback configuration with Korean optimization
+                        if (currentLanguage === 'ko') {
                             aiConfig = {
-                                model: modelConfig.name,
+                                model: 'llama3.2',
                                 options: {
-                                    temperature: 0.9, // Higher creativity for fun responses
-                                    num_predict: 100,
-                                    ...modelConfig.parameters
+                                    temperature: 0.1,     // ULTRA low for Korean consistency
+                                    top_p: 0.6,          // Very focused
+                                    top_k: 20,           // Limited vocabulary
+                                    repeat_penalty: 1.3, // Higher repetition penalty
+                                    num_predict: 60,     // Very short responses
+                                    stop: ["です", "だ", "ます", "する", "たち", "という", "tất cả", "của", "những", "và", "happiness", "joy", "wonderful", "children", "magic", "magical", "people", "beautiful", "amazing", "special", "perfect", "ingly", "ness", "tion", "ly", "ing", "的", "了", "和", "在", "ครับ", "ค่ะ", "และ", "ที่", "и", "в", "на", "с"] // Stop on all foreign words
+                                }
+                            };
+                        } else {
+                            aiConfig = {
+                                model: 'llama3.2',
+                                options: {
+                                    temperature: 0.9,
+                                    num_predict: 100
                                 }
                             };
                         }
-                    } else {
-                        aiConfig = {
-                            model: 'llama3.2',
-                            options: {
-                                temperature: 0.9,
-                                num_predict: 100
-                            }
-                        };
                     }
 
                     const response = await fetch('/api/generate', {
@@ -2261,6 +2363,71 @@
                 });
             };
 
+            // Korean language purity validation function
+            const validateKoreanPurity = (message) => {
+                // Check for common foreign language contamination patterns
+                const foreignPatterns = [
+                    // Japanese contamination
+                    /です/g, /だ/g, /である/g, /たち/g, /ます/g, /する/g,
+                    /という/g, /から/g, /まで/g, /について/g, /として/g,
+                    /[가-힣]です/gi, /[가-힣]だ/gi, /[가-힣]ます/gi,
+
+                    // Vietnamese contamination
+                    /tất cả/gi, /của/gi, /những/gi, /và/gi, /cho/gi,
+                    /với/gi, /để/gi, /được/gi, /có/gi, /là/gi,
+
+                    // English contamination
+                    /happiness/gi, /joy/gi, /wonderful/gi, /magic/gi, /magical/gi,
+                    /children/gi, /child/gi, /people/gi, /everyone/gi, /somebody/gi,
+                    /beautiful/gi, /amazing/gi, /fantastic/gi, /incredible/gi,
+                    /special/gi, /perfect/gi, /awesome/gi, /excellent/gi,
+
+                    // English suffix contamination
+                    /ingly$/gi, /ness$/gi, /tion$/gi, /ly$/gi, /ing$/gi,
+                    /[가-힣]+ingly/gi, /[가-힣]+ness/gi, /[가-힣]+ly$/gi,
+                    /[가-힣]+ing$/gi, /[가-힣]+tion/gi,
+
+                    // Mixed language combinations
+                    /[가-힣]+です/gi, /[가-힣]+だ/gi, /[가-힣]+ます/gi,
+                    /[가-힣]+tất cả/gi, /[가-힣]+của/gi,
+                    /오래ingly/gi, /정말ly/gi, /아주ness/gi,
+
+                    // Chinese contamination
+                    /的/g, /了/g, /和/g, /在/g, /是/g, /有/g, /我/g, /你/g, /他/g,
+
+                    // Thai contamination
+                    /ครับ/g, /ค่ะ/g, /และ/g, /ที่/g, /เป็น/g, /มี/g,
+
+                    // Russian contamination
+                    /и/g, /в/g, /на/g, /с/g, /что/g, /как/g, /для/g,
+                ];
+
+                let hasContamination = false;
+                foreignPatterns.forEach(pattern => {
+                    if (pattern.test(message)) {
+                        hasContamination = true;
+                        console.warn(`🚨 Korean contamination detected: ${pattern}`, message);
+                    }
+                });
+
+                if (hasContamination) {
+                    // Return a safe, pure Korean fallback message
+                    const fallbackMessages = [
+                        "호호호! 북극에서 크리스마스 준비가 한창입니다. 엘프들과 순록들이 모두 바쁘게 움직이고 있어요! 🎅",
+                        "호호호! 전세계 착한 아이들에게 선물을 나누어 줄 생각에 마음이 설렙니다. 올해도 즐거운 크리스마스가 될 것 같아요! 🎁",
+                        "호호호! 순록들과 함께 하늘을 날며 모든 가정에 따뜻함을 전해드리고 있답니다. 멋진 크리스마스 되세요! 🦌",
+                        "호호호! 크리스마스 이브가 다가와서 정말 신나요! 엘프들이 열심히 선물을 준비하고 있어요! ✨",
+                        "호호호! 착한 아이들을 위해 특별한 선물을 준비했어요. 곧 여러분을 만날 수 있을 거예요! 🎄",
+                        "호호호! 루돌프와 순록 친구들도 모두 준비됐어요! 크리스마스 밤이 정말 기대됩니다! 🛷"
+                    ];
+                    const randomIndex = Math.floor(Math.random() * fallbackMessages.length);
+                    console.log('✅ Using pure Korean fallback message due to foreign language contamination detected');
+                    return fallbackMessages[randomIndex];
+                }
+
+                return message;
+            };
+
             const getSantaMessage = async () => {
                 if (loadingMessage) return;
 
@@ -2281,15 +2448,35 @@
                         // Generate context-aware prompt using PromptManager
                         prompt = window.promptManager.generateSantaMessage(santaStats, userLocation);
 
-                        // Get current model configuration
+                        // Get current model configuration with Korean-specific optimizations
                         const modelConfig = window.configManager.getCurrentModel();
-                        aiConfig = {
-                            model: window.configManager.get('aiProvider.defaultModel'),
-                            options: modelConfig?.parameters || {
-                                temperature: 0.8,
-                                num_predict: 150
-                            }
+
+                        // Use more conservative settings for Korean to improve consistency
+                        const baseOptions = modelConfig?.parameters || {
+                            temperature: 0.8,
+                            num_predict: 150
                         };
+
+                        // Korean-specific AI configuration for better language purity
+                        if (currentLanguage === 'ko') {
+                            aiConfig = {
+                                model: window.configManager.get('aiProvider.defaultModel'),
+                                options: {
+                                    ...baseOptions,
+                                    temperature: 0.1,    // ULTRA low temperature for Korean consistency
+                                    top_p: 0.6,         // Very focused sampling
+                                    top_k: 20,          // Limit vocabulary choices
+                                    repeat_penalty: 1.3, // Higher repetition penalty
+                                    num_predict: 80,     // Shorter responses for better control
+                                    stop: ["です", "だ", "ます", "する", "たち", "という", "tất cả", "của", "những", "và", "happiness", "joy", "wonderful", "children", "magic", "magical", "people", "beautiful", "amazing", "special", "perfect", "ingly", "ness", "tion", "ly", "ing", "的", "了", "和", "在", "ครับ", "ค่ะ", "และ", "ที่", "и", "в", "на", "с"] // Stop on all foreign words
+                                }
+                            };
+                        } else {
+                            aiConfig = {
+                                model: window.configManager.get('aiProvider.defaultModel'),
+                                options: baseOptions
+                            };
+                        }
 
                     } else {
                         // Fallback to old hardcoded approach
@@ -2324,21 +2511,50 @@
                                 : 'Santa has finished his Christmas deliveries and is resting at the North Pole with the reindeer.';
                         }
 
-                        const santaPromptPrefix = window.languageManager.getSantaPromptPrefix();
-                        prompt = `${santaPromptPrefix}${context} 즐겁고 마법같은 분위기를 유지하고 간단명료하게 작성해주세요. 이모지는 적게 사용하세요 (최대 1-2개). 따옴표는 사용하지 마세요.`;
+                        prompt = `시스템: 당신은 순수 한국어로만 말하는 산타클로스입니다. 절대로 다른 언어를 섞지 마세요.
+
+상황: ${context}
+
+좋은 예시:
+"호호호! 북극에서 크리스마스 준비가 한창입니다. 엘프들과 순록들이 모두 바쁘게 움직이고 있어요!"
+
+나쁜 예시 (절대 사용 금지):
+- "산타클로스가です" (일본어)
+- "tất cả의 아이들" (베트남어)
+- "happiness와 joy" (영어)
+- "wonderful한" (영어+한국어 혼합)
+
+지시사항: 위 상황에 대한 따뜻한 메시지를 2-3문장으로 작성하세요. 오직 한국어만 사용하세요.
+
+산타클로스의 메시지:`;
 
                         // For English, use the original format
                         if (currentLanguage !== 'ko') {
                             prompt = `${santaPromptPrefix}${context} Be jolly, mention the reindeer if relevant, and keep it magical and brief. Use emojis sparingly (1-2 max). Don't use quotation marks.`;
                         }
 
-                        aiConfig = {
-                            model: "llama3.2",
-                            options: {
-                                temperature: 0.8,
-                                num_predict: 150
-                            }
-                        };
+                        // Korean-specific AI configuration for fallback
+                        if (currentLanguage === 'ko') {
+                            aiConfig = {
+                                model: "llama3.2",
+                                options: {
+                                    temperature: 0.1,    // ULTRA low temperature
+                                    top_p: 0.6,         // Very focused sampling
+                                    top_k: 20,          // Limit vocabulary choices
+                                    repeat_penalty: 1.3, // Higher repetition penalty
+                                    num_predict: 80,     // Shorter responses
+                                    stop: ["です", "だ", "ます", "する", "たち", "という", "tất cả", "của", "những", "và", "happiness", "joy", "wonderful", "children", "magic", "magical", "people", "beautiful", "amazing", "special", "perfect", "ingly", "ness", "tion", "ly", "ing", "的", "了", "和", "在", "ครับ", "ค่ะ", "และ", "ที่", "и", "в", "на", "с"] // Stop on all foreign words
+                                }
+                            };
+                        } else {
+                            aiConfig = {
+                                model: "llama3.2",
+                                options: {
+                                    temperature: 0.8,
+                                    num_predict: 150
+                                }
+                            };
+                        }
                     }
 
                     // Get Ollama URL
@@ -2365,8 +2581,14 @@
                     }
 
                     const data = await response.json();
-                    const message = data.response || '';
-                    setSantaMessage(message.trim());
+                    let message = data.response || '';
+
+                    // Korean language purity validation
+                    if (currentLanguage === 'ko') {
+                        message = validateKoreanPurity(message.trim());
+                    }
+
+                    setSantaMessage(message);
 
                     // Play ho ho ho sound when message is successfully generated
                     soundManager.playHoHoHo();
@@ -2379,8 +2601,11 @@
                 } catch (error) {
                     console.error('❌ Error getting Santa message:', error);
 
-                    // User-friendly error message
-                    const errorMessage = 'Ho ho ho! My magical messaging system seems to be taking a little Christmas break. Please try again in a moment! 🎅✨';
+                    // User-friendly localized error message
+                    const errorMessage = window.languageManager.t('santaMessage.error') ||
+                        (currentLanguage === 'ko'
+                            ? '호호호! 산타의 마법 메시지 시스템이 잠시 크리스마스 휴식을 취하고 있어요. 잠시 후 다시 시도해주세요! 🎅✨'
+                            : 'Ho ho ho! My magical messaging system seems to be taking a little Christmas break. Please try again in a moment! 🎅✨');
 
                     setSantaMessage(errorMessage);
                 } finally {
@@ -2599,10 +2824,10 @@
                             <div className="bg-white rounded-2xl p-8 mb-6 shadow-xl text-center">
                                 <span style={{fontSize: '64px', color: '#dc2626', display: 'block', textAlign: 'center', marginBottom: '16px'}}>📍</span>
                                 <h2 className="text-2xl font-bold mb-4 text-gray-800">
-                                    See Santa's Distance from You!
+                                    {window.languageManager.t('location.promptTitle')}
                                 </h2>
                                 <p className="text-gray-600 mb-6">
-                                    Share your location to see exactly how far Santa is from your home
+                                    {window.languageManager.t('location.promptDescription')}
                                 </p>
                                 <button
                                     onClick={requestLocation}
@@ -2616,7 +2841,7 @@
                         {locationPermission === 'denied' && (
                             <div className="bg-yellow-50 border-2 border-yellow-400 rounded-2xl p-6 mb-6">
                                 <p className="text-yellow-800 text-center">
-                                    Location access denied. You can still track Santa globally!
+                                    {window.languageManager.t('location.deniedMessage')}
                                 </p>
                             </div>
                         )}

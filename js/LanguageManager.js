@@ -53,6 +53,9 @@ class LanguageManager {
             'location.tracking': 'Santa is tracking your area! Make sure you\'re on the nice list! 🎁',
             'location.error': 'Unable to get location',
             'location.denied': 'Location access denied',
+            'location.promptTitle': 'See Santa\'s Distance from You!',
+            'location.promptDescription': 'Share your location to see exactly how far Santa is from your home',
+            'location.deniedMessage': 'Location access denied. You can still track Santa globally!',
 
             // AI Messages
             'ai.messageTitle': '🎅 Message from Santa (via Local AI)',
@@ -135,6 +138,7 @@ class LanguageManager {
             // Santa Message Section
             'santaMessage.title': 'Message from Santa',
             'santaMessage.subtitle': 'Santa\'s magical AI assistant is ready to send you a personalized message!',
+            'santaMessage.error': 'Ho ho ho! My magical messaging system seems to be taking a little Christmas break. Please try again in a moment! 🎅✨',
 
             // Footer
             'footer.currentTime': 'Current Time',
@@ -226,6 +230,15 @@ class LanguageManager {
             'reindeer.speed.veryFast': 'very fast',
             'reindeer.speed.extremelyFast': 'extremely fast',
 
+            // Reindeer Status
+            'reindeer.status.preparing': 'preparing',
+            'reindeer.status.delivering': 'delivering',
+            'reindeer.status.celebrating': 'celebrating',
+            'reindeer.status.resting': 'resting',
+
+            // Formation
+            'reindeer.formation.vFormation': 'V-Formation',
+
             // Tooltips
             'tooltip.disableSound': 'Disable Sound Effects',
             'tooltip.enableSound': 'Enable Sound Effects',
@@ -278,6 +291,9 @@ class LanguageManager {
             'location.tracking': '산타가 당신의 지역을 추적하고 있습니다! 착한 아이 목록에 있는지 확인하세요! 🎁',
             'location.error': '위치를 가져올 수 없습니다',
             'location.denied': '위치 접근이 거부되었습니다',
+            'location.promptTitle': '산타와의 거리를 확인하세요!',
+            'location.promptDescription': '위치를 공유하면 집에서 산타까지의 정확한 거리를 알 수 있습니다',
+            'location.deniedMessage': '위치 접근이 거부되었습니다. 여전히 전 세계적으로 산타를 추적할 수 있습니다!',
 
             // AI Messages
             'ai.messageTitle': '🎅 산타의 메시지 (로컬 AI 제공)',
@@ -360,6 +376,7 @@ class LanguageManager {
             // Santa Message Section
             'santaMessage.title': '산타의 메시지',
             'santaMessage.subtitle': '산타의 마법 AI 도우미가 개인 맞춤 메시지를 보낼 준비가 되었습니다!',
+            'santaMessage.error': '호호호! 산타의 마법 메시지 시스템이 잠시 크리스마스 휴식을 취하고 있어요. 잠시 후 다시 시도해주세요! 🎅✨',
 
             // Footer
             'footer.currentTime': '현재 시간',
@@ -450,6 +467,15 @@ class LanguageManager {
             'reindeer.speed.fast': '빠름',
             'reindeer.speed.veryFast': '매우 빠름',
             'reindeer.speed.extremelyFast': '극도로 빠름',
+
+            // Reindeer Status
+            'reindeer.status.preparing': '준비 중',
+            'reindeer.status.delivering': '배달 중',
+            'reindeer.status.celebrating': '축하 중',
+            'reindeer.status.resting': '휴식 중',
+
+            // Formation
+            'reindeer.formation.vFormation': 'V자 대형',
 
             // Tooltips
             'tooltip.disableSound': '음향 효과 비활성화',
@@ -618,17 +644,27 @@ class LanguageManager {
     // Get Nice List prompt in the current language
     getNiceListPromptPrefix(name) {
         if (this.currentLanguage === 'ko') {
-            return `당신은 착한 아이와 말썽꾸러기 목록을 확인하는 산타클로스입니다! "${name}"라는 사람이 올해 착한 아이 목록에 있는지 알고 싶어합니다.
+            return `시스템: 당신은 순수 한국어로만 말하는 산타클로스입니다. 절대로 다른 언어를 섞지 마세요.
 
-이름만을 기준으로 (창의적이고 재미있게) 다음 중 하나로 판단해주세요:
-1. NICE - 착한 아이 목록에 있다는 격려적인 메시지
-2. NAUGHTY - 말썽꾸러기 목록에 있다는 부드러운 경고와 더 착해지라는 격려
+작업: "${name}"라는 사람이 착한 아이 목록에 있는지 확인해주세요.
 
-정확히 이 형식으로 응답해주세요:
+좋은 예시:
+STATUS: NICE
+MESSAGE: 호호호! 철수님, 올해 정말 착하게 지내셨군요! 크리스마스에 멋진 선물을 받으실 거예요.
+
+나쁜 예시 (절대 사용 금지):
+- "철수님이です" (일본어)
+- "very good한 아이" (영어+한국어 혼합)
+- "tất cả children" (베트남어+영어)
+- "wonderful하게" (영어+한국어 혼합)
+
+형식:
 STATUS: [NICE 또는 NAUGHTY]
-MESSAGE: [산타로서의 개인화된 한국어 메시지 - 1-2문장, 따뜻하고 즐거우며, 이름을 언급]
+MESSAGE: [순수 한국어로만 작성된 1-2문장 메시지, ${name}님을 언급]
 
-창의적이고 재미있게, 마법같은 크리스마스 분위기를 유지해주세요!`;
+지시사항: 오직 한국어만 사용하고, 창의적이고 따뜻하게 작성하세요.
+
+산타의 답변:`;
         } else {
             return `You are Santa Claus checking your Nice and Naughty lists! Someone named "${name}" wants to know if they're on the Nice List this year.
 

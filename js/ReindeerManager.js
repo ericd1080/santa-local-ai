@@ -5,6 +5,13 @@
 
 class ReindeerManager {
     constructor() {
+        // Listen for language changes to refresh localized data
+        if (window.languageManager) {
+            window.languageManager.addEventListener('language-changed', () => {
+                this.notifyListeners('reindeer-updated', this.getTeamStatus());
+            });
+        }
+
         this.reindeer = [
             {
                 name: 'Dasher',
@@ -252,27 +259,83 @@ class ReindeerManager {
             personality: this.getLocalizedPersonality(reindeer.name),
             specialty: this.getLocalizedSpecialty(reindeer.name),
             currentTask: this.getLocalizedCurrentTask(reindeer.name, reindeer.status),
-            speed: this.getLocalizedSpeed(reindeer.speed)
+            speed: this.getLocalizedSpeed(reindeer.speed),
+            status: this.getLocalizedStatus(reindeer.status)
         }));
     }
 
+    getLocalizedStatus(status) {
+        if (!window.languageManager) return status;
+
+        // Map English statuses to translation keys
+        const statusMappings = {
+            'preparing': 'reindeer.status.preparing',
+            'delivering': 'reindeer.status.delivering',
+            'celebrating': 'reindeer.status.celebrating',
+            'resting': 'reindeer.status.resting',
+            'flying': 'reindeer.status.flying',
+            'navigating': 'reindeer.status.navigating',
+            'pulling': 'reindeer.status.pulling',
+            'guiding': 'reindeer.status.guiding',
+            'racing': 'reindeer.status.racing',
+            'helping': 'reindeer.status.helping',
+            'leading': 'reindeer.status.leading'
+        };
+
+        const key = statusMappings[status] || `reindeer.status.${status}`;
+        const translation = window.languageManager.t(key);
+
+        // If translation fails, return a fallback
+        if (translation === key) {
+            const fallbacks = {
+                'preparing': window.languageManager.getCurrentLanguage() === 'ko' ? '준비 중' : 'preparing',
+                'delivering': window.languageManager.getCurrentLanguage() === 'ko' ? '배달 중' : 'delivering',
+                'celebrating': window.languageManager.getCurrentLanguage() === 'ko' ? '축하 중' : 'celebrating',
+                'resting': window.languageManager.getCurrentLanguage() === 'ko' ? '휴식 중' : 'resting',
+                'flying': window.languageManager.getCurrentLanguage() === 'ko' ? '비행 중' : 'flying',
+                'navigating': window.languageManager.getCurrentLanguage() === 'ko' ? '항해 중' : 'navigating',
+                'pulling': window.languageManager.getCurrentLanguage() === 'ko' ? '끌기' : 'pulling',
+                'guiding': window.languageManager.getCurrentLanguage() === 'ko' ? '안내 중' : 'guiding',
+                'racing': window.languageManager.getCurrentLanguage() === 'ko' ? '경주 중' : 'racing',
+                'helping': window.languageManager.getCurrentLanguage() === 'ko' ? '도움' : 'helping',
+                'leading': window.languageManager.getCurrentLanguage() === 'ko' ? '선두' : 'leading'
+            };
+            return fallbacks[status] || status;
+        }
+
+        return translation;
+    }
+
     getLocalizedPersonality(name) {
+        if (!window.languageManager) return this.reindeer.find(r => r.name === name)?.personality || 'Unknown';
         const key = `reindeer.${name.toLowerCase()}.personality`;
-        return window.languageManager.t(key);
+        const translation = window.languageManager.t(key);
+        return translation;
     }
 
     getLocalizedSpecialty(name) {
+        if (!window.languageManager) return this.reindeer.find(r => r.name === name)?.specialty || 'Unknown';
         const key = `reindeer.${name.toLowerCase()}.specialty`;
-        return window.languageManager.t(key);
+        const translation = window.languageManager.t(key);
+        return translation;
     }
 
     getLocalizedSpeed(speed) {
-        const speedKey = speed.replace(/\s+/g, ''); // Remove spaces
+        if (!window.languageManager) return speed;
+        // Convert speed to proper key format
+        const speedMappings = {
+            'moderate': 'moderate',
+            'fast': 'fast',
+            'very fast': 'veryFast',
+            'extremely fast': 'extremelyFast'
+        };
+        const speedKey = speedMappings[speed] || 'moderate';
         const key = `reindeer.speed.${speedKey}`;
         return window.languageManager.t(key);
     }
 
     getLocalizedCurrentTask(name, status) {
+        if (!window.languageManager) return `${status} task`;
         if (status === 'preparing') {
             return this.getLocalizedPreparationTask(name);
         } else if (status === 'delivering') {
@@ -284,6 +347,7 @@ class ReindeerManager {
     }
 
     getLocalizedPreparationTask(name) {
+        if (!window.languageManager) return `${name} preparing`;
         const preparationTasks = {
             'Dasher': 'reindeer.task.checkingFlightRoutes',
             'Dancer': 'reindeer.task.practicingManeuvers',
@@ -300,6 +364,7 @@ class ReindeerManager {
     }
 
     getLocalizedDeliveryTask(name) {
+        if (!window.languageManager) return `${name} delivering`;
         const deliveryTasks = {
             'Dasher': 'reindeer.task.leadingFormation',
             'Dancer': 'reindeer.task.maintainingStability',
@@ -316,6 +381,7 @@ class ReindeerManager {
     }
 
     getLocalizedCelebrationTask(name) {
+        if (!window.languageManager) return `${name} celebrating`;
         // Use a subset of tasks for celebration
         const celebrationTasks = [
             'reindeer.task.organizingPresents',
@@ -342,11 +408,25 @@ class ReindeerManager {
             totalReindeer: this.reindeer.length,
             activeReindeer: activeReindeer.length,
             leader: this.currentLeader.name,
-            formation: this.formationPattern,
+            formation: this.getLocalizedFormation(),
             morale: Math.round(this.teamMorale),
             averageSpeed: averageSpeed,
             specialStatus: this.getSpecialTeamStatus()
         };
+    }
+
+    getLocalizedFormation() {
+        if (!window.languageManager) return this.formationPattern;
+        // Convert formation pattern to localized version
+        if (this.formationPattern === 'V-formation') {
+            return window.languageManager.t('reindeer.formation.vFormation');
+        }
+        return this.formationPattern;
+    }
+
+    // Method to refresh reindeer data when language changes
+    refreshLocalization() {
+        this.notifyListeners('reindeer-updated', this.getTeamStatus());
     }
 
     calculateAverageSpeed() {
@@ -379,7 +459,7 @@ class ReindeerManager {
     }
 
     getReindeerFormation() {
-        // Return reindeer in their flight formation
+        // Return reindeer in their flight formation with localized data
         const formation = [
             [this.reindeer.find(r => r.name === 'Rudolph')], // Lead
             [
@@ -400,7 +480,22 @@ class ReindeerManager {
             ] // Back row
         ];
 
-        return formation.filter(row => row.every(reindeer => reindeer));
+        // Apply localization to each reindeer in the formation
+        const localizedFormation = formation.map(row =>
+            row.map(reindeer => {
+                if (!reindeer) return null;
+                return {
+                    ...reindeer,
+                    personality: this.getLocalizedPersonality(reindeer.name),
+                    specialty: this.getLocalizedSpecialty(reindeer.name),
+                    currentTask: this.getLocalizedCurrentTask(reindeer.name, reindeer.status),
+                    speed: this.getLocalizedSpeed(reindeer.speed),
+                    status: this.getLocalizedStatus(reindeer.status)
+                };
+            })
+        );
+
+        return localizedFormation.filter(row => row.every(reindeer => reindeer));
     }
 
     getRandomReindeerFact() {
