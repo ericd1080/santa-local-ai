@@ -407,6 +407,12 @@
 
             generatePrompt(promptType, context = {}) {
                 try {
+                    // For Santa messages, use language-aware prompts
+                    const santaMessageTypes = ['preparing', 'delivering', 'finished'];
+                    if (santaMessageTypes.includes(promptType)) {
+                        return this.generateLanguageAwareSantaPrompt(promptType, context);
+                    }
+
                     const template = this.configManager.getPrompt(promptType);
                     if (!template) {
                         throw new Error(`Prompt template '${promptType}' not found`);
@@ -421,6 +427,29 @@
                 } catch (error) {
                     console.error(`❌ Failed to generate prompt '${promptType}':`, error);
                     return this.getFallbackPrompt(promptType, context);
+                }
+            }
+
+            generateLanguageAwareSantaPrompt(promptType, context = {}) {
+                const currentLanguage = window.languageManager.getCurrentLanguage();
+                const fullContext = this.buildFullContext(context);
+
+                if (currentLanguage === 'ko') {
+                    // Korean Santa prompts
+                    const koreanPrompts = {
+                        preparing: "당신은 산타클로스입니다! 크리스마스 이브를 위해 북극에서 준비하는 따뜻하고 즐거운 한국어 메시지를 작성해주세요 (최대 2-3문장). 엘프들이 선물을 포장하느라 바쁩니다. 즐겁고 마법같은 분위기를 유지하고 간단명료하게 작성해주세요. 이모지는 적게 사용하세요 (최대 1-2개). 따옴표는 사용하지 마세요.",
+                        delivering: `당신은 산타클로스입니다! 전세계에 선물을 배달하고 있는 산타로서 따뜻하고 즐거운 한국어 메시지를 작성해주세요 (최대 2-3문장). ${fullContext.DISTANCE_CONTEXT || ''} ${fullContext.GIFTS_CONTEXT || ''} 즐겁고 순록에 대한 언급도 포함하며 마법같은 분위기를 유지하고 간단명료하게 작성해주세요. 이모지는 적게 사용하세요 (최대 1-2개). 따옴표는 사용하지 마세요.`,
+                        finished: "당신은 산타클로스입니다! 크리스마스 배달을 마치고 순록들과 함께 북극에서 쉬고 있는 따뜻하고 즐거운 한국어 메시지를 작성해주세요 (최대 2-3문장). 즐겁고 마법같은 분위기를 유지하고 간단명료하게 작성해주세요. 이모지는 적게 사용하세요 (최대 1-2개). 따옴표는 사용하지 마세요."
+                    };
+                    return koreanPrompts[promptType] || koreanPrompts.preparing;
+                } else {
+                    // English Santa prompts (existing)
+                    const englishPrompts = {
+                        preparing: "You are Santa Claus! Write a cheerful, warm message (2-3 sentences max) about preparing for Christmas Eve at the North Pole. The elves are busy wrapping presents. Be jolly, mention the reindeer if relevant, and keep it magical and brief. Use emojis sparingly (1-2 max). Don't use quotation marks.",
+                        delivering: `You are Santa Claus! Write a cheerful, warm message (2-3 sentences max) to someone tracking your journey. Santa is currently delivering presents around the world! ${fullContext.DISTANCE_CONTEXT || ''} ${fullContext.GIFTS_CONTEXT || ''} Be jolly, mention the reindeer if relevant, and keep it magical and brief. Use emojis sparingly (1-2 max). Don't use quotation marks.`,
+                        finished: "You are Santa Claus! Write a cheerful, warm message (2-3 sentences max) about finishing Christmas deliveries and resting at the North Pole with the reindeer. Be jolly and keep it magical and brief. Use emojis sparingly (1-2 max). Don't use quotation marks."
+                    };
+                    return englishPrompts[promptType] || englishPrompts.preparing;
                 }
             }
 
@@ -518,13 +547,23 @@
             }
 
             getFallbackPrompt(promptType, context) {
-                const fallbacks = {
-                    preparing: "Ho ho ho! I'm busy preparing for Christmas Eve at the North Pole! The elves and I are working hard to make this Christmas magical! 🎅",
-                    delivering: "Ho ho ho! I'm on my way around the world delivering presents! Keep being good and I might visit your area soon! 🎁",
-                    finished: "Ho ho ho! What a wonderful Christmas that was! All the presents have been delivered and I'm back home with the reindeer! 🎄"
-                };
+                const currentLanguage = window.languageManager.getCurrentLanguage();
 
-                return fallbacks[promptType] || "Ho ho ho! Merry Christmas from Santa! 🎅";
+                if (currentLanguage === 'ko') {
+                    const koreanFallbacks = {
+                        preparing: "호호호! 크리스마스 이브를 위해 북극에서 열심히 준비하고 있어요! 엘프들과 함께 이번 크리스마스를 마법같이 만들기 위해 노력하고 있답니다! 🎅",
+                        delivering: "호호호! 전 세계를 돌아다니며 선물을 배달하고 있어요! 착하게 지내면 곧 당신의 지역도 방문할지도 몰라요! 🎁",
+                        finished: "호호호! 정말 멋진 크리스마스였어요! 모든 선물을 배달하고 순록들과 함께 집으로 돌아왔답니다! 🎄"
+                    };
+                    return koreanFallbacks[promptType] || "호호호! 산타가 전하는 메리 크리스마스! 🎅";
+                } else {
+                    const englishFallbacks = {
+                        preparing: "Ho ho ho! I'm busy preparing for Christmas Eve at the North Pole! The elves and I are working hard to make this Christmas magical! 🎅",
+                        delivering: "Ho ho ho! I'm on my way around the world delivering presents! Keep being good and I might visit your area soon! 🎁",
+                        finished: "Ho ho ho! What a wonderful Christmas that was! All the presents have been delivered and I'm back home with the reindeer! 🎄"
+                    };
+                    return englishFallbacks[promptType] || "Ho ho ho! Merry Christmas from Santa! 🎅";
+                }
             }
 
             registerContextProvider(key, provider) {
@@ -582,7 +621,7 @@
                 <div className="fixed inset-0 bg-black bg-opacity-50 z-50 flex items-center justify-center p-4">
                     <div className="bg-white rounded-xl shadow-2xl max-w-4xl w-full max-h-[85vh] overflow-hidden">
                         <div className="bg-gradient-to-r from-red-600 to-green-600 text-white p-6 flex items-center justify-between rounded-t-xl">
-                            <h2 className="text-xl font-bold">🦌 Santa's Reindeer Team</h2>
+                            <h2 className="text-xl font-bold">🦌 {window.languageManager.t('reindeer.panelTitle')}</h2>
                             <button
                                 onClick={() => onClose(false)}
                                 className="text-white hover:text-gray-200 transition-colors"
@@ -595,31 +634,31 @@
                             {/* Team Status Overview */}
                             <div className="grid grid-cols-1 md:grid-cols-3 gap-4 mb-6">
                                 <div className="bg-red-50 rounded-lg p-4 border border-red-200">
-                                    <h3 className="font-semibold text-red-700 mb-2">Team Leader</h3>
+                                    <h3 className="font-semibold text-red-700 mb-2">{window.languageManager.t('reindeer.teamLeader')}</h3>
                                     <p className="text-2xl">{teamStatus.leader || 'Rudolph'}</p>
-                                    <p className="text-sm text-gray-600">Leading the formation</p>
+                                    <p className="text-sm text-gray-600">{window.languageManager.t('reindeer.leadingFormation')}</p>
                                 </div>
                                 <div className="bg-green-50 rounded-lg p-4 border border-green-200">
-                                    <h3 className="font-semibold text-green-700 mb-2">Team Morale</h3>
+                                    <h3 className="font-semibold text-green-700 mb-2">{window.languageManager.t('reindeer.teamMorale')}</h3>
                                     <p className="text-2xl">{teamStatus.morale || 95}%</p>
-                                    <p className="text-sm text-gray-600">Excellent spirits!</p>
+                                    <p className="text-sm text-gray-600">{window.languageManager.t('reindeer.excellentSpirits')}</p>
                                 </div>
                                 <div className="bg-blue-50 rounded-lg p-4 border border-blue-200">
-                                    <h3 className="font-semibold text-blue-700 mb-2">Formation</h3>
+                                    <h3 className="font-semibold text-blue-700 mb-2">{window.languageManager.t('reindeer.formation')}</h3>
                                     <p className="text-2xl">{teamStatus.formation || 'V-Formation'}</p>
-                                    <p className="text-sm text-gray-600">Optimal efficiency</p>
+                                    <p className="text-sm text-gray-600">{window.languageManager.t('reindeer.optimalEfficiency')}</p>
                                 </div>
                             </div>
 
                             {/* Special Status */}
                             <div className="bg-gradient-to-r from-yellow-50 to-orange-50 rounded-lg p-4 mb-6 border border-yellow-200">
-                                <h3 className="font-semibold text-orange-700 mb-2">🌟 Current Status</h3>
-                                <p className="text-gray-700">{teamStatus.specialStatus || 'The reindeer team is ready for action!'}</p>
+                                <h3 className="font-semibold text-orange-700 mb-2">🌟 {window.languageManager.t('reindeer.currentStatus')}</h3>
+                                <p className="text-gray-700">{teamStatus.specialStatus || window.languageManager.t('reindeer.teamStatusReady')}</p>
                             </div>
 
                             {/* Reindeer Formation Display */}
                             <div className="mb-6">
-                                <h3 className="text-lg font-semibold mb-4 text-center">🛷 Flight Formation</h3>
+                                <h3 className="text-lg font-semibold mb-4 text-center">🛷 {window.languageManager.t('reindeer.flightFormation')}</h3>
                                 <div className="space-y-3">
                                     {formation.map((row, rowIndex) => (
                                         <div key={rowIndex} className="flex justify-center items-center space-x-4">
@@ -663,22 +702,22 @@
 
                                         <div className="space-y-2">
                                             <div>
-                                                <span className="text-xs font-medium text-gray-500">PERSONALITY:</span>
+                                                <span className="text-xs font-medium text-gray-500">{window.languageManager.t('reindeer.personality')}</span>
                                                 <p className="text-sm">{reindeer.personality}</p>
                                             </div>
 
                                             <div>
-                                                <span className="text-xs font-medium text-gray-500">SPECIALTY:</span>
+                                                <span className="text-xs font-medium text-gray-500">{window.languageManager.t('reindeer.specialty')}</span>
                                                 <p className="text-sm">{reindeer.specialty}</p>
                                             </div>
 
                                             <div>
-                                                <span className="text-xs font-medium text-gray-500">CURRENT TASK:</span>
+                                                <span className="text-xs font-medium text-gray-500">{window.languageManager.t('reindeer.currentTask')}</span>
                                                 <p className="text-sm italic text-blue-700">{reindeer.currentTask}</p>
                                             </div>
 
                                             <div className="flex justify-between items-center">
-                                                <span className="text-xs font-medium text-gray-500">SPEED:</span>
+                                                <span className="text-xs font-medium text-gray-500">{window.languageManager.t('reindeer.speed')}</span>
                                                 <span className={`text-xs px-2 py-1 rounded-full ${
                                                     reindeer.speed === 'extremely fast' ? 'bg-red-200 text-red-800' :
                                                     reindeer.speed === 'very fast' ? 'bg-orange-200 text-orange-800' :
@@ -695,7 +734,7 @@
 
                             <div className="mt-6 text-center">
                                 <p className="text-sm text-gray-500">
-                                    🎄 The reindeer team updates every 30 seconds during Christmas Eve! ✨
+                                    🎄 {window.languageManager.t('reindeer.updateMessage')} ✨
                                 </p>
                             </div>
                         </div>
@@ -739,7 +778,7 @@
                 <div className="fixed inset-0 bg-black bg-opacity-50 z-50 flex items-center justify-center p-4">
                     <div className="bg-white rounded-xl shadow-2xl max-w-4xl w-full max-h-[85vh] overflow-hidden">
                         <div className="bg-gradient-to-r from-blue-600 to-purple-600 text-white p-6 flex items-center justify-between rounded-t-xl">
-                            <h2 className="text-xl font-bold">🌤️ Santa's Weather Report</h2>
+                            <h2 className="text-xl font-bold">{window.languageManager.t('weather.panelTitle')}</h2>
                             <button
                                 onClick={() => onClose(false)}
                                 className="text-white hover:text-gray-200 transition-colors"
@@ -752,30 +791,30 @@
                             {/* Current Weather */}
                             {currentWeather && (
                                 <div className="mb-6">
-                                    <h3 className="text-lg font-semibold mb-4 text-center">🎅 Current Conditions</h3>
+                                    <h3 className="text-lg font-semibold mb-4 text-center">{window.languageManager.t('weather.currentConditions')}</h3>
                                     <div className="bg-gradient-to-br from-blue-50 to-purple-50 rounded-xl p-6 border-2 border-blue-200">
                                         <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
                                             <div className="space-y-3">
                                                 <div className="flex items-center justify-between">
-                                                    <span className="font-medium text-gray-700">Location:</span>
+                                                    <span className="font-medium text-gray-700">{window.languageManager.t('weather.location')}</span>
                                                     <span className="text-blue-700 font-semibold">{currentWeather.location.area}</span>
                                                 </div>
                                                 <div className="flex items-center justify-between">
-                                                    <span className="font-medium text-gray-700">Condition:</span>
+                                                    <span className="font-medium text-gray-700">{window.languageManager.t('weather.condition')}</span>
                                                     <div className="flex items-center space-x-2">
                                                         {getWeatherIcon(currentWeather.type)}
                                                         <span>{currentWeather.description}</span>
                                                     </div>
                                                 </div>
                                                 <div className="flex items-center justify-between">
-                                                    <span className="font-medium text-gray-700">Temperature:</span>
+                                                    <span className="font-medium text-gray-700">{window.languageManager.t('weather.temperature')}</span>
                                                     <div className="flex items-center space-x-2">
                                                         <span style={{fontSize: '16px'}}>🌡️</span>
                                                         <span>{Math.round(currentWeather.temperature)}°C</span>
                                                     </div>
                                                 </div>
                                                 <div className="flex items-center justify-between">
-                                                    <span className="font-medium text-gray-700">Visibility:</span>
+                                                    <span className="font-medium text-gray-700">{window.languageManager.t('weather.visibility')}</span>
                                                     <div className="flex items-center space-x-2">
                                                         <span style={{fontSize: '16px'}}>👁️</span>
                                                         <span className="capitalize">{currentWeather.visibility}</span>
@@ -784,24 +823,24 @@
                                             </div>
                                             <div className="space-y-3">
                                                 <div className="flex items-center justify-between">
-                                                    <span className="font-medium text-gray-700">Wind Speed:</span>
+                                                    <span className="font-medium text-gray-700">{window.languageManager.t('weather.windSpeed')}</span>
                                                     <div className="flex items-center space-x-2">
                                                         <span style={{fontSize: '16px'}}>💨</span>
                                                         <span>{currentWeather.windSpeed} km/h</span>
                                                     </div>
                                                 </div>
                                                 <div className="flex items-center justify-between">
-                                                    <span className="font-medium text-gray-700">Flight Difficulty:</span>
+                                                    <span className="font-medium text-gray-700">{window.languageManager.t('weather.flightStatus')}</span>
                                                     <span className={`px-3 py-1 rounded-full text-sm font-medium ${getDifficultyColor(currentWeather.difficulty)}`}>
                                                         {currentWeather.difficulty}
                                                     </span>
                                                 </div>
                                                 <div className="flex items-center justify-between">
-                                                    <span className="font-medium text-gray-700">Reindeer Mood:</span>
+                                                    <span className="font-medium text-gray-700">{window.languageManager.t('weather.reindeerMood')}</span>
                                                     <span className="capitalize text-green-600 font-medium">{currentWeather.reindeerMood}</span>
                                                 </div>
                                                 <div className="flex items-center justify-between">
-                                                    <span className="font-medium text-gray-700">Local Time:</span>
+                                                    <span className="font-medium text-gray-700">{window.languageManager.t('weather.localTime')}</span>
                                                     <span>{currentWeather.localTime}</span>
                                                 </div>
                                             </div>
@@ -810,7 +849,7 @@
                                         {currentWeather.christmasMagic && (
                                             <div className="mt-4 p-3 bg-gradient-to-r from-yellow-100 to-red-100 rounded-lg border border-yellow-300">
                                                 <p className="text-center text-yellow-800 font-medium">
-                                                    ✨ Christmas Magic is Active! ✨
+                                                    ✨ {window.languageManager.t('weather.christmasMagicActive')}! ✨
                                                 </p>
                                             </div>
                                         )}
@@ -821,28 +860,28 @@
                             {/* Weather Forecast */}
                             {weatherForecast && weatherForecast.length > 0 && (
                                 <div className="mb-6">
-                                    <h3 className="text-lg font-semibold mb-4 text-center">🛷 Forecast Along Santa's Route</h3>
+                                    <h3 className="text-lg font-semibold mb-4 text-center">{window.languageManager.t('weather.forecast')}</h3>
                                     <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
                                         {weatherForecast.map((forecast, index) => (
                                             <div key={index} className="bg-gradient-to-br from-green-50 to-blue-50 rounded-lg p-4 border border-green-200">
                                                 <div className="text-center mb-3">
                                                     <h4 className="font-semibold text-gray-800">{forecast.location.area}</h4>
-                                                    <p className="text-sm text-gray-600">In {forecast.hoursAhead} hour{forecast.hoursAhead !== 1 ? 's' : ''}</p>
+                                                    <p className="text-sm text-gray-600">{window.languageManager.t('weather.forecastIn', {hours: forecast.hoursAhead, plural: forecast.hoursAhead !== 1 ? 's' : ''})}</p>
                                                 </div>
                                                 <div className="space-y-2">
                                                     <div className="flex items-center justify-between">
-                                                        <span className="text-sm text-gray-700">Weather:</span>
+                                                        <span className="text-sm text-gray-700">{window.languageManager.t('weather.forecastWeather')}</span>
                                                         <div className="flex items-center space-x-1">
                                                             {getWeatherIcon(forecast.weather.type)}
                                                             <span className="text-sm">{forecast.weather.description}</span>
                                                         </div>
                                                     </div>
                                                     <div className="flex items-center justify-between">
-                                                        <span className="text-sm text-gray-700">Temp:</span>
+                                                        <span className="text-sm text-gray-700">{window.languageManager.t('weather.forecastTemp')}</span>
                                                         <span className="text-sm">{Math.round(forecast.weather.temperature)}°C</span>
                                                     </div>
                                                     <div className="flex items-center justify-between">
-                                                        <span className="text-sm text-gray-700">Difficulty:</span>
+                                                        <span className="text-sm text-gray-700">{window.languageManager.t('weather.forecastDifficulty')}</span>
                                                         <span className={`px-2 py-1 rounded-full text-xs ${getDifficultyColor(forecast.weather.difficulty)}`}>
                                                             {forecast.weather.difficulty}
                                                         </span>
@@ -857,7 +896,7 @@
                             {/* Weather History */}
                             {weatherHistory && weatherHistory.length > 0 && (
                                 <div>
-                                    <h3 className="text-lg font-semibold mb-4 text-center">📍 Recent Weather Conditions</h3>
+                                    <h3 className="text-lg font-semibold mb-4 text-center">{window.languageManager.t('weather.recentConditions')}</h3>
                                     <div className="space-y-2 max-h-48 overflow-y-auto">
                                         {weatherHistory.slice(0, 5).map((weather, index) => (
                                             <div key={index} className="flex items-center justify-between p-3 bg-gray-50 rounded-lg">
@@ -882,7 +921,7 @@
 
                             <div className="mt-6 text-center">
                                 <p className="text-sm text-gray-500">
-                                    🌍 Weather updates automatically as Santa travels around the world! 🛷
+                                    🌍 {window.languageManager.t('weather.updatesMessage')} 🛷
                                 </p>
                             </div>
                         </div>
@@ -924,7 +963,7 @@
                 <div className="fixed inset-0 bg-black bg-opacity-50 z-50 flex items-center justify-center p-4">
                     <div className="bg-white rounded-xl shadow-2xl max-w-4xl w-full max-h-[85vh] overflow-hidden">
                         <div className="bg-gradient-to-r from-red-600 to-green-600 text-white p-6 flex items-center justify-between rounded-t-xl">
-                            <h2 className="text-xl font-bold">🎅 Santa's Chimney & Safety Tips</h2>
+                            <h2 className="text-xl font-bold">{window.languageManager.t('safety.panelTitle')}</h2>
                             <button
                                 onClick={() => onClose(false)}
                                 className="text-white hover:text-gray-200 transition-colors"
@@ -945,7 +984,7 @@
                                                 : 'text-gray-600 hover:text-gray-800'
                                         }`}
                                     >
-                                        📋 Safety Tips
+                                        {window.languageManager.t('safety.tabSafetyTips')}
                                     </button>
                                     <button
                                         onClick={() => setViewMode('categories')}
@@ -955,7 +994,7 @@
                                                 : 'text-gray-600 hover:text-gray-800'
                                         }`}
                                     >
-                                        📂 Categories
+                                        {window.languageManager.t('safety.tabCategories')}
                                     </button>
                                 </div>
                             </div>
@@ -963,7 +1002,7 @@
                             {viewMode === 'categories' ? (
                                 // Categories View
                                 <div>
-                                    <h3 className="text-lg font-semibold mb-4 text-center">🏠 Safety Categories</h3>
+                                    <h3 className="text-lg font-semibold mb-4 text-center">{window.languageManager.t('safety.categoriesTitle')}</h3>
                                     <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
                                         {categories.map((category) => (
                                             <div
@@ -997,7 +1036,7 @@
                                                         : 'bg-gray-100 text-gray-700 hover:bg-gray-200'
                                                 }`}
                                             >
-                                                All Tips ({allTips.length})
+                                                {window.languageManager.t('safety.allTips', {count: allTips.length})}
                                             </button>
                                             {categories.map((category) => (
                                                 <button
@@ -1018,7 +1057,7 @@
                                     {/* Current Tip Highlight */}
                                     {currentTip && selectedCategory === 'all' && (
                                         <div className="mb-6">
-                                            <h3 className="text-lg font-semibold mb-4 text-center">⭐ Featured Safety Tip</h3>
+                                            <h3 className="text-lg font-semibold mb-4 text-center">{window.languageManager.t('safety.featuredTip')}</h3>
                                             <div className="bg-gradient-to-r from-yellow-50 to-orange-50 rounded-xl p-6 border-2 border-yellow-300">
                                                 <div className="flex items-start space-x-4">
                                                     <span className="text-3xl">{currentTip.icon}</span>
@@ -1042,7 +1081,7 @@
                                     {/* Tips List */}
                                     <div className="space-y-4">
                                         <h3 className="text-lg font-semibold text-center">
-                                            {selectedCategory === 'all' ? '📋 All Safety Tips' : `${categories.find(c => c.name === selectedCategory)?.icon} ${categories.find(c => c.name === selectedCategory)?.displayName}`}
+                                            {selectedCategory === 'all' ? window.languageManager.t('safety.allTipsHeader') : `${categories.find(c => c.name === selectedCategory)?.icon} ${categories.find(c => c.name === selectedCategory)?.displayName}`}
                                         </h3>
                                         {filteredTips.map((tip) => (
                                             <div
@@ -1076,7 +1115,7 @@
 
                             <div className="mt-6 text-center">
                                 <p className="text-sm text-gray-500">
-                                    🎄 Safety tips update periodically to help keep your Christmas magical and safe! 🛡️
+                                    {window.languageManager.t('safety.updateMessage')}
                                 </p>
                             </div>
                         </div>
@@ -1093,7 +1132,7 @@
                 <div className="fixed inset-0 bg-black bg-opacity-50 z-50 flex items-center justify-center p-4">
                     <div className="bg-white rounded-xl shadow-2xl max-w-2xl w-full max-h-[80vh] overflow-hidden">
                         <div className="bg-gradient-to-r from-pink-600 to-red-600 text-white p-6 flex items-center justify-between rounded-t-xl">
-                            <h2 className="text-xl font-bold">⭐ Favorite Santa Messages</h2>
+                            <h2 className="text-xl font-bold">⭐ {window.languageManager.t('favorites.panelTitle')}</h2>
                             <button
                                 onClick={() => onClose(false)}
                                 className="text-white hover:text-gray-200 transition-colors"
@@ -1106,9 +1145,9 @@
                             {favorites.length === 0 ? (
                                 <div className="text-center py-8">
                                     <span style={{fontSize: '48px', color: '#d1d5db', display: 'block', textAlign: 'center', marginBottom: '16px'}}>💝</span>
-                                    <p className="text-gray-500 mb-2">No favorite messages yet!</p>
+                                    <p className="text-gray-500 mb-2">{window.languageManager.t('favorites.noMessages')}</p>
                                     <p className="text-sm text-gray-400">
-                                        Click the ⭐ button next to Santa messages to save your favorites.
+                                        {window.languageManager.t('favorites.instructions')}
                                     </p>
                                 </div>
                             ) : (
@@ -1145,8 +1184,10 @@
                             {favorites.length > 0 && (
                                 <div className="mt-6 text-center">
                                     <p className="text-xs text-gray-500">
-                                        {favorites.length} favorite message{favorites.length !== 1 ? 's' : ''} •
-                                        Maximum 20 messages stored
+                                        {window.languageManager.t('favorites.messageCount', {
+                                            count: favorites.length,
+                                            plural: favorites.length !== 1 ? 's' : ''
+                                        })} • {window.languageManager.t('favorites.maxMessages')}
                                     </p>
                                 </div>
                             )}
@@ -1335,7 +1376,7 @@
                 <div className="fixed inset-0 bg-black bg-opacity-50 z-50 flex items-center justify-center p-4">
                     <div className="bg-white rounded-xl shadow-2xl max-w-md w-full">
                         <div className="bg-gradient-to-r from-red-600 to-green-600 text-white p-6 flex items-center justify-between rounded-t-xl">
-                            <h2 className="text-xl font-bold">🎅 Santa's Nice List Checker</h2>
+                            <h2 className="text-xl font-bold">{window.languageManager.t('niceList.title')}</h2>
                             <button
                                 onClick={() => onClose(false)}
                                 className="text-white hover:text-gray-200 transition-colors"
@@ -1346,20 +1387,20 @@
 
                         <div className="p-6">
                             <p className="text-gray-600 mb-4">
-                                Want to know if you're on Santa's Nice List this year? Enter your name and let Santa's AI check for you!
+                                {window.languageManager.t('niceList.description')}
                             </p>
 
                             <div className="space-y-4">
                                 <div>
                                     <label className="block text-sm font-medium text-gray-700 mb-2">
-                                        Your Name
+                                        {window.languageManager.t('niceList.nameLabel')}
                                     </label>
                                     <input
                                         type="text"
                                         value={niceListName}
                                         onChange={(e) => setNiceListName(e.target.value)}
                                         onKeyPress={(e) => e.key === 'Enter' && onCheck()}
-                                        placeholder="Enter your name..."
+                                        placeholder={window.languageManager.t('niceList.namePlaceholder')}
                                         className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-red-500"
                                         disabled={checkingNiceList}
                                     />
@@ -1370,7 +1411,7 @@
                                     disabled={!niceListName.trim() || checkingNiceList}
                                     className="w-full bg-gradient-to-r from-red-600 to-red-700 hover:from-red-700 hover:to-red-800 text-white font-bold py-3 px-4 rounded-lg transition-all transform hover:scale-105 disabled:opacity-50 disabled:cursor-not-allowed disabled:transform-none"
                                 >
-                                    {checkingNiceList ? '🎅 Santa is checking...' : '✨ Check Nice List'}
+                                    {checkingNiceList ? window.languageManager.t('niceList.checking') : window.languageManager.t('niceList.checkButton')}
                                 </button>
 
                                 {niceListResult && (
@@ -1386,7 +1427,7 @@
                                             <h3 className={`font-bold ${
                                                 niceListResult.status === 'NICE' ? 'text-green-700' : 'text-yellow-700'
                                             }`}>
-                                                {niceListResult.status === 'NICE' ? 'On the Nice List!' : 'On the Naughty List'}
+                                                {niceListResult.status === 'NICE' ? window.languageManager.t('niceList.onNiceList') : window.languageManager.t('niceList.onNaughtyList')}
                                             </h3>
                                         </div>
                                         <p className={`text-sm ${
@@ -1400,7 +1441,7 @@
 
                             <div className="mt-4 text-center">
                                 <p className="text-xs text-gray-500">
-                                    Santa's magical AI • Results are for fun only! 🎄
+                                    {window.languageManager.t('niceList.disclaimer')}
                                 </p>
                             </div>
                         </div>
@@ -1416,7 +1457,7 @@
                     <button
                         onClick={() => onClose(false)}
                         className="fixed bottom-4 right-4 bg-red-600 hover:bg-red-700 text-white p-3 rounded-full shadow-lg transition-all transform hover:scale-105"
-                        title="Settings not available in simple mode"
+                        title={window.languageManager.t('config.settingsNotAvailable')}
                     >
                         <span style={{fontSize: '24px'}}>⚙️</span>
                     </button>
@@ -1427,7 +1468,7 @@
                 <div className="fixed inset-0 bg-black bg-opacity-50 z-50 flex items-center justify-center p-4">
                     <div className="bg-white rounded-xl shadow-2xl max-w-2xl w-full max-h-[80vh] overflow-hidden">
                         <div className="bg-red-600 text-white p-6 flex items-center justify-between">
-                            <h2 className="text-xl font-bold">Configuration</h2>
+                            <h2 className="text-xl font-bold">{window.languageManager.t('config.title')}</h2>
                             <button
                                 onClick={() => onClose(false)}
                                 className="hover:bg-red-700 p-2 rounded-lg"
@@ -1438,12 +1479,12 @@
 
                         <div className="p-6">
                             <div className="mb-4">
-                                <h3 className="text-lg font-semibold mb-2">Current Model</h3>
+                                <h3 className="text-lg font-semibold mb-2">{window.languageManager.t('config.currentModel')}</h3>
                                 <p className="text-gray-600">{currentModel}</p>
                             </div>
 
                             <div className="mb-4">
-                                <h3 className="text-lg font-semibold mb-2">Available Models</h3>
+                                <h3 className="text-lg font-semibold mb-2">{window.languageManager.t('config.availableModels')}</h3>
                                 <div className="space-y-2">
                                     {availableModels.map((model) => (
                                         <div
@@ -1456,14 +1497,14 @@
                                             onClick={() => onModelChange(model.name)}
                                         >
                                             <div className="font-semibold">{model.displayName || model.name}</div>
-                                            <div className="text-sm text-gray-600">{model.description || 'Model description'}</div>
+                                            <div className="text-sm text-gray-600">{model.description || window.languageManager.t('config.modelDescription')}</div>
                                         </div>
                                     ))}
                                 </div>
                             </div>
 
                             <div className="text-sm text-gray-500">
-                                <p>💡 For full configuration features, use the enhanced server (enhanced-server.py)</p>
+                                <p>{window.languageManager.t('config.enhancedServerNote')}</p>
                             </div>
                         </div>
                     </div>
@@ -2370,7 +2411,7 @@
                         <div className="flex items-center">
                             <div className="w-2 h-2 bg-green-400 rounded-full mr-2"></div>
                             <p className="text-sm text-green-700">
-                                <span className="font-medium">Santa's Magic:</span> Ready & Operational ✨
+                                <span className="font-medium">{window.languageManager.t('config.santaMagic')}</span> {window.languageManager.t('config.readyOperational')} ✨
                             </p>
                         </div>
                     </div>
@@ -2385,18 +2426,18 @@
 
                         {/* Header */}
                         <div className="text-center mb-8">
-                            <div className="flex items-center justify-center mb-4">
-                                <h1 className="text-6xl font-bold text-white drop-shadow-lg mr-4">
+                            <div className="flex items-center justify-center mb-4 flex-wrap sm:flex-nowrap gap-2 sm:gap-0">
+                                <h1 className="text-6xl font-bold text-white drop-shadow-lg mr-4 whitespace-nowrap">
                                     {window.languageManager.t('app.title')}
                                 </h1>
                                 <div className="bg-green-500 text-white px-3 py-1 rounded-full text-sm font-bold animate-pulse">
-                                    ✅ FIXED!
+                                    ✅ {window.languageManager.t('config.fixed')}
                                 </div>
                                 <div className="flex space-x-2">
                                     <button
                                         onClick={toggleSound}
                                         className="bg-white bg-opacity-20 hover:bg-opacity-30 text-white p-3 rounded-full transition-all transform hover:scale-105"
-                                        title={soundEnabled ? "Disable Sound Effects" : "Enable Sound Effects"}
+                                        title={soundEnabled ? window.languageManager.t('tooltip.disableSound') : window.languageManager.t('tooltip.enableSound')}
                                     >
                                         {soundEnabled ?
                                             <span className="text-xl">🔊</span> :
@@ -2417,28 +2458,28 @@
                                             }
                                         }}
                                         className="bg-white bg-opacity-20 hover:bg-opacity-30 text-white p-3 rounded-full transition-all transform hover:scale-105"
-                                        title="Drop Some Gifts! (Enhanced with special effects)"
+                                        title={window.languageManager.t('tooltip.dropGifts')}
                                     >
                                         <span className="text-xl">🎁</span>
                                     </button>
                                     <button
                                         onClick={() => setShowNiceListChecker(true)}
                                         className="bg-white bg-opacity-20 hover:bg-opacity-30 text-white p-3 rounded-full transition-all transform hover:scale-105"
-                                        title="Check Santa's Nice List"
+                                        title={window.languageManager.t('tooltip.checkNiceList')}
                                     >
                                         <span className="text-xl">📋</span>
                                     </button>
                                     <button
                                         onClick={() => setShowLanguageSelector(true)}
                                         className="bg-white bg-opacity-20 hover:bg-opacity-30 text-white p-3 rounded-full transition-all transform hover:scale-105"
-                                        title={`Language: ${window.languageManager.getLanguageNativeName(currentLanguage)}`}
+                                        title={window.languageManager.t('tooltip.language', {language: window.languageManager.getLanguageNativeName(currentLanguage)})}
                                     >
                                         <span style={{fontSize: '24px'}}>🌍</span>
                                     </button>
                                     <button
                                         onClick={() => setShowFavorites(true)}
                                         className="bg-white bg-opacity-20 hover:bg-opacity-30 text-white p-3 rounded-full transition-all transform hover:scale-105 relative"
-                                        title="Favorite Messages"
+                                        title={window.languageManager.t('favorites.title')}
                                     >
                                         <span style={{fontSize: '24px'}}>❤️</span>
                                         {favoriteMessages.length > 0 && (
@@ -2453,7 +2494,7 @@
                                             setShowReindeerPanel(true);
                                         }}
                                         className="bg-white bg-opacity-20 hover:bg-opacity-30 text-white p-3 rounded-full transition-all transform hover:scale-105 relative"
-                                        title="Reindeer Team Status"
+                                        title={window.languageManager.t('tooltip.reindeerStatus')}
                                     >
                                         <span className="text-xl">🦌</span>
                                         <span className="absolute -top-1 -right-1 bg-green-500 text-white text-xs rounded-full w-5 h-5 flex items-center justify-center">
@@ -2466,7 +2507,7 @@
                                             setShowWeatherPanel(true);
                                         }}
                                         className="bg-white bg-opacity-20 hover:bg-opacity-30 text-white p-3 rounded-full transition-all transform hover:scale-105 relative"
-                                        title={`Santa's Weather: ${currentWeather?.description || 'Loading...'}`}
+                                        title={window.languageManager.t('tooltip.weatherReport', {description: currentWeather?.description || window.languageManager.t('general.loading')})}
                                     >
                                         <span className="text-xl">
                                             {currentWeather?.icon || '🌤️'}
@@ -2483,7 +2524,7 @@
                                             setShowSafetyPanel(true);
                                         }}
                                         className="bg-white bg-opacity-20 hover:bg-opacity-30 text-white p-3 rounded-full transition-all transform hover:scale-105 relative"
-                                        title={`Safety Tips: ${currentSafetyTip?.title || 'Loading...'}`}
+                                        title={window.languageManager.t('tooltip.safetyTips', {title: currentSafetyTip?.title || window.languageManager.t('general.loading')})}
                                     >
                                         <span style={{fontSize: '24px'}}>🛡️</span>
                                         {currentSafetyTip?.severity === 'critical' && (
@@ -2495,14 +2536,14 @@
                                     <button
                                         onClick={() => setShowConfigPanel(true)}
                                         className="bg-white bg-opacity-20 hover:bg-opacity-30 text-white p-3 rounded-full transition-all transform hover:scale-105"
-                                        title="Open Configuration"
+                                        title={window.languageManager.t('tooltip.openConfig')}
                                     >
                                         <span style={{fontSize: '24px'}}>⚙️</span>
                                     </button>
                                     <button
                                         onClick={() => setShowNaughtyListManager(true)}
                                         className="bg-white bg-opacity-20 hover:bg-opacity-30 text-white p-3 rounded-full transition-all transform hover:scale-105 relative"
-                                        title={currentLanguage === 'ko' ? '말썽꾸러기 목록 관리' : 'Manage Naughty List'}
+                                        title={window.languageManager.t('tooltip.manageNaughtyList')}
                                     >
                                         <span style={{fontSize: '24px'}}>📋</span>
                                         {customNaughtyList.length > 0 && (
@@ -2647,30 +2688,30 @@
                                         <div className="flex items-center justify-between mb-2">
                                             <h4 className="font-semibold text-cyan-800 flex items-center">
                                                 <span className="text-lg mr-2">{currentWeather.icon}</span>
-                                                Weather Report
+                                                {window.languageManager.t('weather.title')}
                                             </h4>
                                             <button
                                                 onClick={() => setShowWeatherPanel(true)}
                                                 className="text-cyan-600 hover:text-cyan-800 text-sm font-medium"
                                             >
-                                                View Details →
+                                                {window.languageManager.t('weather.viewDetails')}
                                             </button>
                                         </div>
                                         <div className="grid grid-cols-2 md:grid-cols-4 gap-3 text-sm">
                                             <div className="text-center">
-                                                <p className="text-gray-600">Location</p>
+                                                <p className="text-gray-600">{window.languageManager.t('weather.location')}</p>
                                                 <p className="font-medium">{currentWeather.location.area}</p>
                                             </div>
                                             <div className="text-center">
-                                                <p className="text-gray-600">Condition</p>
+                                                <p className="text-gray-600">{window.languageManager.t('weather.condition')}</p>
                                                 <p className="font-medium">{currentWeather.description}</p>
                                             </div>
                                             <div className="text-center">
-                                                <p className="text-gray-600">Temperature</p>
+                                                <p className="text-gray-600">{window.languageManager.t('weather.temperature')}</p>
                                                 <p className="font-medium">{Math.round(currentWeather.temperature)}°C</p>
                                             </div>
                                             <div className="text-center">
-                                                <p className="text-gray-600">Flight Status</p>
+                                                <p className="text-gray-600">{window.languageManager.t('weather.flightStatus')}</p>
                                                 <p className={`font-medium capitalize ${
                                                     currentWeather.difficulty === 'easy' ? 'text-green-600' :
                                                     currentWeather.difficulty === 'moderate' ? 'text-yellow-600' :
@@ -2683,7 +2724,7 @@
                                         {currentWeather.christmasMagic && (
                                             <div className="mt-3 text-center">
                                                 <span className="inline-flex items-center px-3 py-1 rounded-full text-xs font-medium bg-yellow-100 text-yellow-800">
-                                                    ✨ Christmas Magic Active ✨
+                                                    ✨ {window.languageManager.t('weather.christmasMagicActive')} ✨
                                                 </span>
                                             </div>
                                         )}
@@ -2698,7 +2739,7 @@
                                 <div className="flex items-center justify-between mb-4">
                                     <h3 className="text-xl font-bold text-orange-800 flex items-center">
                                         <span className="text-2xl mr-3">{currentSafetyTip.icon}</span>
-                                        Santa's Safety Tip
+                                        {window.languageManager.t('safety.title')}
                                     </h3>
                                     <div className="flex items-center space-x-2">
                                         <span className={`px-3 py-1 rounded-full text-xs font-medium border ${
@@ -2707,13 +2748,13 @@
                                             'bg-blue-100 text-blue-800 border-blue-300'
                                         }`}>
                                             {currentSafetyTip.severity === 'critical' ? '🚨' :
-                                             currentSafetyTip.severity === 'important' ? '⚠️' : '💡'} {currentSafetyTip.severity}
+                                             currentSafetyTip.severity === 'important' ? '⚠️' : '💡'} {window.languageManager.t(`safety.severity.${currentSafetyTip.severity}`)}
                                         </span>
                                         <button
                                             onClick={() => setShowSafetyPanel(true)}
                                             className="text-orange-600 hover:text-orange-800 text-sm font-medium"
                                         >
-                                            View All Tips →
+                                            {window.languageManager.t('safety.viewAllTips')}
                                         </button>
                                     </div>
                                 </div>
@@ -2728,7 +2769,7 @@
                                 </div>
                                 <div className="text-center">
                                     <p className="text-xs text-orange-600">
-                                        Safety tips rotate every 2 minutes • Follow Santa's advice for a magical Christmas! 🛡️
+                                        {window.languageManager.t('safety.tipRotationMessage')} 🛡️
                                     </p>
                                 </div>
                             </div>
@@ -2739,10 +2780,10 @@
                             <div className="bg-gradient-to-br from-red-50 to-green-50 rounded-2xl p-8 shadow-xl mb-6 border-2 border-red-200">
                                 <div className="text-center mb-4">
                                     <h2 className="text-2xl font-bold text-red-700 mb-2">
-                                        🎅 Message from Santa
+                                        🎅 {window.languageManager.t('santaMessage.title')}
                                     </h2>
                                     <p className="text-sm text-gray-600 mb-3">
-                                        Santa's magical AI assistant is ready to send you a personalized message!
+                                        {window.languageManager.t('santaMessage.subtitle')}
                                     </p>
                                     <button
                                         onClick={getSantaMessage}
@@ -2777,7 +2818,7 @@
                                                             ? 'text-red-500 bg-red-50 hover:bg-red-100'
                                                             : 'text-gray-400 hover:text-red-500 hover:bg-red-50'
                                                     }`}
-                                                    title={isMessageFavorited(santaMessage) ? "Remove from favorites" : "Add to favorites"}
+                                                    title={isMessageFavorited(santaMessage) ? window.languageManager.t('favorites.removeFromFavorites') : window.languageManager.t('favorites.addToFavorites')}
                                                 >
                                                     <span style={{fontSize: '20px'}}>
                                                         {isMessageFavorited(santaMessage) ? '❤️' : '🤍'}
@@ -2797,13 +2838,13 @@
                         {/* Footer */}
                         <div className="text-center mt-8 text-blue-200">
                             <p className="text-sm">
-                                🎄 Current Time: {currentTime.toLocaleTimeString()} 🎄
+                                🎄 {window.languageManager.t('footer.currentTime')}: {currentTime.toLocaleTimeString()} 🎄
                             </p>
                             <p className="text-xs mt-2 opacity-75">
-                                Santa starts his journey on Christmas Eve at 6 PM and travels westward around the world!
+                                {window.languageManager.t('footer.journeyMessage')}
                             </p>
                             <p className="text-xs mt-1 text-green-300">
-                                🎄 All Christmas magic systems are operational! Click ⚙️ for settings 🎄
+                                🎄 {window.languageManager.t('footer.systemsOperational')} 🎄
                             </p>
                         </div>
                     </div>

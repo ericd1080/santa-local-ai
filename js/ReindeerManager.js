@@ -246,7 +246,84 @@ class ReindeerManager {
     }
 
     getAllReindeer() {
-        return [...this.reindeer];
+        // Return localized reindeer data
+        return this.reindeer.map(reindeer => ({
+            ...reindeer,
+            personality: this.getLocalizedPersonality(reindeer.name),
+            specialty: this.getLocalizedSpecialty(reindeer.name),
+            currentTask: this.getLocalizedCurrentTask(reindeer.name, reindeer.status),
+            speed: this.getLocalizedSpeed(reindeer.speed)
+        }));
+    }
+
+    getLocalizedPersonality(name) {
+        const key = `reindeer.${name.toLowerCase()}.personality`;
+        return window.languageManager.t(key);
+    }
+
+    getLocalizedSpecialty(name) {
+        const key = `reindeer.${name.toLowerCase()}.specialty`;
+        return window.languageManager.t(key);
+    }
+
+    getLocalizedSpeed(speed) {
+        const speedKey = speed.replace(/\s+/g, ''); // Remove spaces
+        const key = `reindeer.speed.${speedKey}`;
+        return window.languageManager.t(key);
+    }
+
+    getLocalizedCurrentTask(name, status) {
+        if (status === 'preparing') {
+            return this.getLocalizedPreparationTask(name);
+        } else if (status === 'delivering') {
+            return this.getLocalizedDeliveryTask(name);
+        } else if (status === 'celebrating') {
+            return this.getLocalizedCelebrationTask(name);
+        }
+        return window.languageManager.t('reindeer.task.resting') || 'Resting at the North Pole';
+    }
+
+    getLocalizedPreparationTask(name) {
+        const preparationTasks = {
+            'Dasher': 'reindeer.task.checkingFlightRoutes',
+            'Dancer': 'reindeer.task.practicingManeuvers',
+            'Prancer': 'reindeer.task.strengtheningHarnesses',
+            'Vixen': 'reindeer.task.studyingWeatherPatterns',
+            'Comet': 'reindeer.task.testingNightVision',
+            'Cupid': 'reindeer.task.organizingGiftLists',
+            'Donner': 'reindeer.task.preparingForStorms',
+            'Blitzen': 'reindeer.task.speedTraining',
+            'Rudolph': 'reindeer.task.polishingNose'
+        };
+        const taskKey = preparationTasks[name];
+        return window.languageManager.t(taskKey) || window.languageManager.t('reindeer.task.checkingFlightRoutes');
+    }
+
+    getLocalizedDeliveryTask(name) {
+        const deliveryTasks = {
+            'Dasher': 'reindeer.task.leadingFormation',
+            'Dancer': 'reindeer.task.maintainingStability',
+            'Prancer': 'reindeer.task.pullingSleigh',
+            'Vixen': 'reindeer.task.readingWindPatterns',
+            'Comet': 'reindeer.task.spottingChimneys',
+            'Cupid': 'reindeer.task.organizingPresents',
+            'Donner': 'reindeer.task.weatherManagement',
+            'Blitzen': 'reindeer.task.timeManagement',
+            'Rudolph': 'reindeer.task.leadingThroughFog'
+        };
+        const taskKey = deliveryTasks[name];
+        return window.languageManager.t(taskKey) || window.languageManager.t('reindeer.task.leadingFormation');
+    }
+
+    getLocalizedCelebrationTask(name) {
+        // Use a subset of tasks for celebration
+        const celebrationTasks = [
+            'reindeer.task.organizingPresents',
+            'reindeer.task.polishingNose',
+            'reindeer.task.speedTraining'
+        ];
+        const randomTask = celebrationTasks[Math.floor(Math.random() * celebrationTasks.length)];
+        return window.languageManager.t(randomTask);
     }
 
     getReindeerByName(name) {
@@ -293,11 +370,11 @@ class ReindeerManager {
         const christmasDay = new Date(currentTime.getFullYear(), 11, 25, 6, 0, 0);
 
         if (currentTime >= christmasEve && currentTime < christmasDay) {
-            return 'All reindeer are working together to deliver Christmas magic! 🎄✨';
+            return window.languageManager.t('reindeer.teamStatusDelivering') + ' 🎄✨';
         } else if (currentTime < christmasEve) {
-            return 'The team is preparing for the biggest night of the year! 🛷';
+            return window.languageManager.t('reindeer.teamStatusPreparing') + ' 🛷';
         } else {
-            return 'The reindeer are celebrating another successful Christmas! 🎉';
+            return window.languageManager.t('reindeer.teamStatusCelebrating') + ' 🎉';
         }
     }
 
