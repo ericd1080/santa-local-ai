@@ -899,7 +899,7 @@
             console.error('Lucide is not loaded!');
         }
 
-        const { useState, useEffect } = React;
+        const { useState, useEffect, useRef } = React;
         // Removed problematic lucide destructuring - using emoji/text icons instead
         // const { Settings, AlertTriangle, MapPin, Clock, Gift, X, Globe, Heart, Trash2, Users, Cloud, CloudRain, Sun, Wind, Thermometer, Eye, Shield, CheckCircle, Home } = lucide || {};
 
@@ -2092,7 +2092,7 @@
 
             // Animation state
             const [gifts, setGifts] = useState([]);
-            const giftIdCounter = React.useRef(0);
+            const giftIdCounter = useRef(0);
 
             // Nice List checker state
             const [showNiceListChecker, setShowNiceListChecker] = useState(false);
