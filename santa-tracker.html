@@ -2116,7 +2116,10 @@
                         const group = L.featureGroup([santaMarker.current, userMarker.current]);
                         map.fitBounds(group.getBounds().pad(0.1));
                     } else {
-                        map.setView([santaStats.santaLat, santaStats.santaLon], 4);
+                        // Use lower zoom level for extreme coordinates like North Pole
+                        const zoom = (Math.abs(santaStats.santaLat) > 80) ? 2 : 4;
+                        map.setView([santaStats.santaLat, santaStats.santaLon], zoom);
+                        console.log(`🗺️ Map centered on Santa at zoom ${zoom}`);
                     }
                 }
             };
@@ -2358,12 +2361,19 @@
                 return () => clearInterval(timer);
             }, []);
 
-            // Santa progress calculations
+            // Santa progress calculations - run once when user location is available
             useEffect(() => {
                 if (userLocation) {
                     calculateSantaProgress();
+
+                    // Set up interval to recalculate only every 5 minutes instead of every second
+                    const santaTimer = setInterval(() => {
+                        calculateSantaProgress();
+                    }, 5 * 60 * 1000); // 5 minutes
+
+                    return () => clearInterval(santaTimer);
                 }
-            }, [userLocation, currentTime]);
+            }, [userLocation]); // Removed currentTime dependency
 
             // Santa arrival sound effect
             useEffect(() => {
