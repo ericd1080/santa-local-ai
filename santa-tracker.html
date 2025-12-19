@@ -2367,8 +2367,8 @@
                             const koreanModels = ['gemma3:latest', 'qwen3:latest'];
                             const currentModel = window.configManager.get('aiProvider.defaultModel');
 
-                            // Force gemma3:latest for Korean since qwen3 is returning empty responses
-                            const preferredModel = 'gemma3:latest';
+                            // Use Korean-optimized model (qwen3:latest is now working properly)
+                            const preferredModel = koreanModels.includes(currentModel) ? currentModel : koreanModels[0];
                             console.log('🇰🇷 Using Korean-optimized model:', preferredModel);
 
                             aiConfig = {
