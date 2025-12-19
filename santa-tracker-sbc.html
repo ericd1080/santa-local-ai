@@ -271,85 +271,192 @@
 
             useEffect(() => {
                 if (isVisible && santaLocation && !mapInstance.current && mapRef.current) {
-                    console.log('🗺️ Initializing SBC Santa map...');
+                    console.log('🗺️ Starting SBC Santa map initialization...');
 
-                    // Initialize map
-                    const map = L.map(mapRef.current, {
-                        zoomControl: true,
-                        scrollWheelZoom: true,
-                        doubleClickZoom: true,
-                        touchZoom: true,
-                        dragging: true,
-                        preferCanvas: true
-                    }).setView([santaLocation.lat, santaLocation.lng], 4);
-
-                    // Add robust tile layer with fallbacks
-                    const tileProviders = [
-                        {
-                            url: 'https://{s}.basemaps.cartocdn.com/rastertiles/voyager/{z}/{x}/{y}{r}.png',
-                            attribution: '© <a href="https://carto.com/attributions">CARTO</a>',
-                            name: 'CartoDB Voyager'
-                        },
-                        {
-                            url: 'https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png',
-                            attribution: '© OpenStreetMap contributors',
-                            name: 'OpenStreetMap'
-                        }
-                    ];
-
-                    let currentProviderIndex = 0;
-
-                    const createTileLayer = (providerIndex = 0) => {
-                        if (providerIndex >= tileProviders.length) {
-                            console.error('❌ All tile providers failed');
-                            return null;
-                        }
-
-                        const provider = tileProviders[providerIndex];
-                        console.log(`🗺️ Loading tiles from: ${provider.name}`);
-
-                        const layer = L.tileLayer(provider.url, {
-                            maxZoom: 18,
-                            attribution: provider.attribution,
-                            timeout: 10000,
-                            errorTileUrl: 'data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAAAEAAAABCAYAAAAfFcSJAAAADUlEQVR42mP8/5+hHgAHggJ/PchI7wAAAABJRU5ErkJggg=='
-                        });
-
-                        layer.on('tileerror', () => {
-                            if (currentProviderIndex < tileProviders.length - 1) {
-                                currentProviderIndex++;
-                                console.log('🔄 Trying fallback provider...');
-                                map.removeLayer(layer);
-                                const fallbackLayer = createTileLayer(currentProviderIndex);
-                                if (fallbackLayer) fallbackLayer.addTo(map);
+                    // Delay initialization to ensure DOM is fully rendered
+                    const initTimeout = setTimeout(() => {
+                        try {
+                            const container = mapRef.current;
+                            if (!container) {
+                                console.error('❌ SBC Map container not available!');
+                                return;
                             }
-                        });
 
-                        return layer;
-                    };
+                            // Force container to have proper dimensions
+                            container.style.width = '100%';
+                            container.style.height = '100%';
+                            container.style.minHeight = '400px';
+                            container.style.position = 'relative';
+                            container.style.display = 'block';
+                            container.innerHTML = ''; // Clear any existing content
 
-                    const tileLayer = createTileLayer();
-                    if (tileLayer) tileLayer.addTo(map);
+                            // Check dimensions after styling
+                            const rect = container.getBoundingClientRect();
+                            console.log(`📐 SBC Map container dimensions: ${rect.width}x${rect.height}`);
 
-                    // Add Santa marker
-                    const santaIcon = L.divIcon({
-                        html: '🎅',
-                        className: 'santa-marker',
-                        iconSize: [30, 30],
-                        iconAnchor: [15, 15]
-                    });
+                            if (rect.width === 0 || rect.height === 0) {
+                                console.error('❌ SBC Map container still has zero dimensions after styling!');
+                                return;
+                            }
 
-                    L.marker([santaLocation.lat, santaLocation.lng], { icon: santaIcon })
-                        .addTo(map)
-                        .bindPopup(`🎅 Santa is in ${santaLocation.location}!`);
+                            console.log('🗺️ Initializing SBC Leaflet map...');
 
-                    mapInstance.current = map;
+                            // Initialize map with robust configuration
+                            const map = L.map(container, {
+                                zoomControl: true,
+                                scrollWheelZoom: true,
+                                doubleClickZoom: true,
+                                touchZoom: true,
+                                dragging: true,
+                                preferCanvas: false, // Use SVG for better compatibility
+                                attributionControl: false,
+                                fadeAnimation: true,
+                                zoomAnimation: true,
+                                inertia: true,
+                                renderer: L.svg() // Force SVG renderer
+                            });
+
+                            // Set initial view
+                            map.setView([santaLocation.lat, santaLocation.lng], 4);
+
+                            console.log('✅ SBC Leaflet map initialized, adding tiles...');
+
+                            // Add robust tile layer with multiple fallback providers
+                            const tileProviders = [
+                                {
+                                    url: 'https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png',
+                                    attribution: '© OpenStreetMap contributors',
+                                    name: 'OpenStreetMap',
+                                    maxZoom: 19
+                                },
+                                {
+                                    url: 'https://{s}.basemaps.cartocdn.com/rastertiles/voyager/{z}/{x}/{y}{r}.png',
+                                    attribution: '© CARTO © OpenStreetMap contributors',
+                                    name: 'CartoDB Voyager',
+                                    maxZoom: 19
+                                },
+                                {
+                                    url: 'https://server.arcgisonline.com/ArcGIS/rest/services/World_Street_Map/MapServer/tile/{z}/{y}/{x}',
+                                    attribution: '© Esri',
+                                    name: 'Esri World Street',
+                                    maxZoom: 19
+                                }
+                            ];
+
+                            // Set up tile layer management
+                            let currentProviderIndex = 0;
+                            let tileLayer = null;
+                            let loadAttempts = 0;
+                            const maxLoadAttempts = tileProviders.length;
+
+                            const createTileLayer = (providerIndex = 0) => {
+                                if (providerIndex >= tileProviders.length) {
+                                    console.error('❌ All SBC tile providers failed! Map will show base background only.');
+                                    // Create a backup colored layer instead of failing completely
+                                    const backupLayer = L.tileLayer('data:image/svg+xml;base64,' +
+                                        btoa('<svg xmlns="http://www.w3.org/2000/svg" width="256" height="256"><rect width="256" height="256" fill="#e0f2fe"/><text x="128" y="128" text-anchor="middle" fill="#0284c7" font-family="Arial" font-size="16">🌍</text></svg>'), {
+                                        maxZoom: 18,
+                                        attribution: '🎅 Santa SBC Map'
+                                    });
+                                    return backupLayer;
+                                }
+
+                                const provider = tileProviders[providerIndex];
+                                console.log(`🗺️ SBC Loading tiles from: ${provider.name} (attempt ${loadAttempts + 1}/${maxLoadAttempts})`);
+
+                                const layer = L.tileLayer(provider.url, {
+                                    maxZoom: provider.maxZoom || 18,
+                                    minZoom: 1,
+                                    attribution: provider.attribution,
+                                    updateWhenIdle: false,
+                                    keepBuffer: 0,
+                                    maxNativeZoom: provider.maxZoom || 18,
+                                    timeout: 8000,
+                                    crossOrigin: true,
+                                    // Use a simple gray tile for errors instead of transparent
+                                    errorTileUrl: 'data:image/svg+xml;base64,' +
+                                        btoa('<svg xmlns="http://www.w3.org/2000/svg" width="256" height="256"><rect width="256" height="256" fill="#f3f4f6"/></svg>')
+                                });
+
+                                let tileLoadCount = 0;
+                                let tileErrorCount = 0;
+
+                                // Handle successful tile loading
+                                layer.on('tileload', function() {
+                                    tileLoadCount++;
+                                    if (tileLoadCount === 1) {
+                                        console.log(`✅ First SBC tile loaded successfully from ${provider.name}`);
+                                    }
+                                });
+
+                                // Handle tile loading errors with smarter fallback
+                                layer.on('tileerror', function(error) {
+                                    tileErrorCount++;
+                                    console.warn(`⚠️ SBC Tile error from ${provider.name} (${tileErrorCount} errors so far)`);
+
+                                    // If we get many errors and haven't loaded many tiles, try next provider
+                                    if (tileErrorCount > 3 && tileLoadCount === 0 && currentProviderIndex < tileProviders.length - 1) {
+                                        console.log('🔄 SBC Too many tile errors, switching provider...');
+                                        currentProviderIndex++;
+                                        loadAttempts++;
+
+                                        setTimeout(() => {
+                                            map.removeLayer(layer);
+                                            const fallbackLayer = createTileLayer(currentProviderIndex);
+                                            if (fallbackLayer) {
+                                                fallbackLayer.addTo(map);
+                                            }
+                                        }, 1000);
+                                    }
+                                });
+
+                                return layer;
+                            };
+
+                            // Create and add the initial tile layer
+                            tileLayer = createTileLayer(0);
+                            if (tileLayer) {
+                                tileLayer.addTo(map);
+                                console.log('🗺️ SBC Tile layer added to map');
+                            }
+
+                            // Add attribution control
+                            L.control.attribution({position: 'bottomright', prefix: false}).addTo(map);
+
+                            // Store map instance
+                            mapInstance.current = map;
+                            // Add Santa marker after map is initialized
+                            const santaIcon = L.divIcon({
+                                html: '🎅',
+                                className: 'santa-marker',
+                                iconSize: [30, 30],
+                                iconAnchor: [15, 15]
+                            });
+
+                            L.marker([santaLocation.lat, santaLocation.lng], { icon: santaIcon })
+                                .addTo(map)
+                                .bindPopup(`🎅 Santa is in ${santaLocation.location}!`);
+
+                            console.log('🎉 SBC Santa map fully initialized!');
+
+                        } catch (error) {
+                            console.error('❌ Failed to initialize SBC map:', error);
+                            // Show user-friendly error
+                            if (mapRef.current) {
+                                mapRef.current.innerHTML = '<div style="display: flex; align-items: center; justify-content: center; height: 100%; background: linear-gradient(135deg, #e0f2fe, #bae6fd); color: #0284c7; font-size: 18px; text-align: center; padding: 20px;"><div>🗺️<br/>Map temporarily unavailable<br/><small>Santa is still trackable!</small></div></div>';
+                            }
+                        }
+                    }, 100); // 100ms delay for DOM readiness
                 }
 
                 return () => {
                     if (mapInstance.current) {
-                        mapInstance.current.remove();
-                        mapInstance.current = null;
+                        try {
+                            mapInstance.current.remove();
+                            mapInstance.current = null;
+                        } catch (error) {
+                            console.warn('SBC Map cleanup warning:', error);
+                        }
                     }
                 };
             }, [isVisible, santaLocation]);

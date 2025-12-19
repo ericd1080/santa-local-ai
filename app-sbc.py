@@ -121,8 +121,8 @@ class SantaTrackerSBC:
 
         return language or 'en'
 
-    def create_family_context(self):
-        """Create personalized context from family database"""
+    def create_family_context(self, language='en'):
+        """Create personalized context from family database with language support"""
         if not self.family_data:
             return ""
 
@@ -134,34 +134,63 @@ class SantaTrackerSBC:
 
             context_parts = []
 
-            # Family information
-            if family.get('lastName'):
-                context_parts.append(f"You're visiting the {family['lastName']} family")
+            if language == 'ko':
+                # Korean context generation
+                if family.get('lastName'):
+                    context_parts.append(f"{family['lastName']} 가족을 방문하고 있습니다")
 
-            if location.get('city') and location.get('state'):
-                context_parts.append(f"in {location['city']}, {location['state']}")
+                if location.get('city') and location.get('state'):
+                    context_parts.append(f"{location['state']} {location['city']}에 살고 있습니다")
 
-            # Family members
-            members = family.get('members', [])
-            if members:
-                children = [m for m in members if m.get('age', 0) < 18]
-                if children:
-                    names = [child['name'] for child in children]
-                    if len(names) == 1:
-                        context_parts.append(f"Little {names[0]} has been {children[0].get('behavior', 'good')}")
-                    else:
-                        context_parts.append(f"The children {', '.join(names[:-1])} and {names[-1]} have all been wonderful")
+                # Family members
+                members = family.get('members', [])
+                if members:
+                    children = [m for m in members if m.get('age', 0) < 18]
+                    if children:
+                        names = [child['name'] for child in children]
+                        if len(names) == 1:
+                            context_parts.append(f"{names[0]}이/가 올해 {children[0].get('behavior', '좋은')} 아이였습니다")
+                        else:
+                            context_parts.append(f"아이들 {', '.join(names)}이/가 모두 훌륭한 아이들이었습니다")
 
-            # Pets
-            if pets:
-                pet_names = [pet['name'] for pet in pets]
-                context_parts.append(f"Don't forget to say hello to {', '.join(pet_names)}")
+                # Pets
+                if pets:
+                    pet_names = [pet['name'] for pet in pets]
+                    context_parts.append(f"반려동물 {', '.join(pet_names)}에게도 따뜻한 인사를 전해주세요")
 
-            # Traditions
-            if traditions:
-                context_parts.append(f"They love {traditions[0]} as a family tradition")
+                # Traditions
+                if traditions:
+                    context_parts.append(f"이 가족은 '{traditions[0]}'를 가족 전통으로 즐깁니다")
 
-            # Emergency overrides
+            else:
+                # English context generation
+                if family.get('lastName'):
+                    context_parts.append(f"You're visiting the {family['lastName']} family")
+
+                if location.get('city') and location.get('state'):
+                    context_parts.append(f"in {location['city']}, {location['state']}")
+
+                # Family members
+                members = family.get('members', [])
+                if members:
+                    children = [m for m in members if m.get('age', 0) < 18]
+                    if children:
+                        names = [child['name'] for child in children]
+                        if len(names) == 1:
+                            context_parts.append(f"Little {names[0]} has been {children[0].get('behavior', 'good')}")
+                        else:
+                            context_parts.append(f"The children {', '.join(names[:-1])} and {names[-1]} have all been wonderful")
+
+                # Pets
+                if pets:
+                    pet_names = [pet['name'] for pet in pets]
+                    context_parts.append(f"Don't forget to say hello to {', '.join(pet_names)}")
+
+                # Traditions
+                if traditions:
+                    context_parts.append(f"They love {traditions[0]} as a family tradition")
+
+            # Emergency overrides (language-neutral)
             emergency = self.family_data.get('emergencyOverrides', {})
             if emergency.get('specialMessage'):
                 context_parts.append(f"SPECIAL: {emergency['specialMessage']}")
@@ -275,7 +304,7 @@ class SantaTrackerSBC:
             self.reload_family_data(language)
 
             # Create personalized family context
-            family_context = self.create_family_context()
+            family_context = self.create_family_context(language)
 
             # Get prompt template
             prompt_template = self.config["prompts"].get(prompt_type, self.config["prompts"]["delivering"])
@@ -301,9 +330,14 @@ class SantaTrackerSBC:
             }
 
             # 🎄 SERVER-SIDE CONTEXT INJECTION - The family details are whispered to Santa!
-            system_message = "You are Santa Claus, jolly and magical!"
-            if family_context:
-                system_message += f" PRIVATE CONTEXT (do not mention you received this info): {family_context}"
+            if language == 'ko':
+                system_message = "당신은 산타클로스입니다! 즐겁고 마법같은 존재입니다!"
+                if family_context:
+                    system_message += f" 비공개 정보 (이 정보를 받았다고 언급하지 마세요): {family_context}"
+            else:
+                system_message = "You are Santa Claus, jolly and magical!"
+                if family_context:
+                    system_message += f" PRIVATE CONTEXT (do not mention you received this info): {family_context}"
 
             data = {
                 "model": model_name,

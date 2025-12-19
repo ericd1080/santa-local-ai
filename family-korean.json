@@ -46,14 +46,6 @@
     "timezone": "Korea/Seoul",
     "specialDetails": "거실 창가에 큰 크리스마스 트리가 있는 아늑한 집"
   },
-  "pets": [
-    {
-      "name": "버디",
-      "type": "강아지",
-      "breed": "골든 리트리버",
-      "personalityNote": "크리스마스 아침의 소란과 포장지를 좋아해요"
-    }
-  ],
   "emergencyOverrides": {
     "specialMessage": "",
     "urgentUpdate": "",
