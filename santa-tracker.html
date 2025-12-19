@@ -226,7 +226,7 @@
         /* Santa Sleigh Animation */
         .santa-sleigh {
             position: absolute;
-            z-index: 1000;
+            z-index: 100;
             font-size: 2rem;
             pointer-events: none;
             display: flex;
@@ -2052,6 +2052,8 @@
             const updateMapMarkers = () => {
                 if (!mapInstance.current || !santaStats) return;
 
+                console.log(`🗺️ Updating map markers - Santa: ${santaStats.santaLat?.toFixed(2)}, ${santaStats.santaLon?.toFixed(2)}`);
+
                 const map = mapInstance.current;
 
                 // Remove existing markers
@@ -2122,6 +2124,13 @@
             const startSleighAnimation = () => {
                 if (sleighAnimation.current) {
                     clearInterval(sleighAnimation.current);
+                    sleighAnimation.current = null;
+                }
+
+                // Clear any existing sleigh elements
+                if (mapRef.current) {
+                    const existingSleighs = mapRef.current.querySelectorAll('.santa-sleigh');
+                    existingSleighs.forEach(sleigh => sleigh.remove());
                 }
 
                 const createSleighElement = () => {
@@ -3429,14 +3438,17 @@
                     distance = Math.floor(R * c);
                 }
 
-                setSantaStats({
+                const santaStatsData = {
                     status,
                     distance,
                     timeUntil,
                     giftsDelivered,
                     santaLon,
                     santaLat
-                });
+                };
+
+                console.log(`🎅 Santa calculated at: ${santaLat.toFixed(2)}, ${santaLon.toFixed(2)} - ${status}`);
+                setSantaStats(santaStatsData);
             };
 
             // Simplified Korean language purity validation function (85% Hangeul rule)
