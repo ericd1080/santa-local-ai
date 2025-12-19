@@ -1,0 +1,67 @@
+{
+  "family": {
+    "lastName": "Your Family Name",
+    "members": [
+      {
+        "name": "Child 1",
+        "age": 8,
+        "interests": ["LEGO", "dinosaurs", "books"],
+        "behavior": "very good",
+        "specialNotes": "loves building and creating things"
+      },
+      {
+        "name": "Child 2",
+        "age": 5,
+        "interests": ["art", "unicorns", "singing"],
+        "behavior": "excellent",
+        "specialNotes": "always shares with others"
+      },
+      {
+        "name": "Parent 1",
+        "role": "tech guru",
+        "interests": ["coding", "gadgets"],
+        "specialNotes": "keeps the Christmas magic running smoothly"
+      },
+      {
+        "name": "Parent 2",
+        "role": "holiday coordinator",
+        "interests": ["baking", "decorating"],
+        "specialNotes": "makes the house feel magical"
+      }
+    ],
+    "traditions": [
+      "hot cocoa and cookies on Christmas Eve",
+      "reading 'Twas the Night Before Christmas'",
+      "leaving carrots for the reindeer"
+    ],
+    "christmasWishes": [
+      "a peaceful and joyful Christmas morning",
+      "making wonderful memories together",
+      "seeing the magic in the children's eyes"
+    ]
+  },
+  "location": {
+    "city": "Your City",
+    "state": "Your State",
+    "timezone": "America/New_York",
+    "specialDetails": "cozy house with a big Christmas tree in the living room window"
+  },
+  "pets": [
+    {
+      "name": "Buddy",
+      "type": "dog",
+      "breed": "Golden Retriever",
+      "personalityNote": "loves Christmas morning chaos and wrapping paper"
+    }
+  ],
+  "emergencyOverrides": {
+    "specialMessage": "",
+    "urgentUpdate": "",
+    "lastMinuteChanges": ""
+  },
+  "metadata": {
+    "lastUpdated": "2024-12-20",
+    "version": "1.0",
+    "notes": "🎄 Edit this file to personalize Santa's responses. Keep family details private and magical!"
+  }
+}

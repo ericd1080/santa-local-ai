@@ -1,0 +1,774 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Santa Tracker SBC - Hybrid Cloud Architecture 🎅</title>
+    <link rel="icon" href="data:image/svg+xml,<svg xmlns=%22http://www.w3.org/2000/svg%22 viewBox=%220 0 100 100%22><text y=%22.9em%22 font-size=%2290%22>🎅</text></svg>">
+
+    <!-- External Dependencies -->
+    <script crossorigin src="https://unpkg.com/react@18/umd/react.production.min.js"></script>
+    <script crossorigin src="https://unpkg.com/react-dom@18/umd/react-dom.production.min.js"></script>
+    <script src="https://unpkg.com/@babel/standalone/babel.min.js"></script>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <script src="https://unpkg.com/lucide@latest/dist/umd/lucide.js"></script>
+
+    <!-- Leaflet for interactive maps -->
+    <link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css"
+        integrity="sha256-p4NxAoJBhIIN+hmNHrzRCf9tD/miZyoHS5obTRR9BMY="
+        crossorigin=""/>
+    <script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"
+        integrity="sha256-20nQCchB9co0qIjJZRGuk2/Z9VM+kNiyxNV1lvTlZBo="
+        crossorigin=""></script>
+
+    <style>
+        @keyframes twinkle {
+            0%, 100% { opacity: 0.3; }
+            50% { opacity: 1; }
+        }
+
+        @keyframes giftDrop {
+            0% { transform: translateY(-100vh) rotate(0deg) scale(0.8); opacity: 0; }
+            10% { opacity: 1; transform: translateY(-80vh) rotate(45deg) scale(1); }
+            50% { transform: translateY(30vh) rotate(180deg) scale(1.1); opacity: 1; }
+            70% { transform: translateY(70vh) rotate(270deg) scale(1); opacity: 1; }
+            85% { transform: translateY(85vh) rotate(360deg) scale(0.9); opacity: 0.8; }
+            100% { transform: translateY(100vh) rotate(450deg) scale(0.7); opacity: 0; }
+        }
+
+        @keyframes sleighMove {
+            0% { transform: translateX(-100px) translateY(0px); }
+            25% { transform: translateX(25vw) translateY(-10px); }
+            50% { transform: translateX(50vw) translateY(-5px); }
+            75% { transform: translateX(75vw) translateY(-15px); }
+            100% { transform: translateX(calc(100vw + 100px)) translateY(-8px); }
+        }
+
+        .twinkle { animation: twinkle 2s infinite; }
+        .gift-drop { animation: giftDrop 4s ease-in-out; }
+        .sleigh-move { animation: sleighMove 20s linear infinite; }
+
+        .christmas-bg {
+            background: linear-gradient(135deg, #0f172a 0%, #1e293b 25%, #334155 50%, #0f172a 100%);
+            min-height: 100vh;
+        }
+
+        .snowflake {
+            position: absolute;
+            color: white;
+            font-size: 1rem;
+            animation: fall linear infinite;
+            pointer-events: none;
+        }
+
+        @keyframes fall {
+            to { transform: translateY(100vh); }
+        }
+
+        .sbc-badge {
+            background: linear-gradient(45deg, #10b981, #059669);
+            box-shadow: 0 4px 15px rgba(16, 185, 129, 0.3);
+        }
+
+        .groq-badge {
+            background: linear-gradient(45deg, #f59e0b, #d97706);
+            box-shadow: 0 4px 15px rgba(245, 158, 11, 0.3);
+        }
+
+        /* 🎯 IPAD-OPTIMIZED LARGE TEXT for distance viewing */
+        @media screen and (min-width: 768px) {
+            .ipad-large-text h1 { font-size: 4rem !important; }
+            .ipad-large-text h2 { font-size: 2.5rem !important; }
+            .ipad-large-text .santa-message {
+                font-size: 2rem !important;
+                line-height: 1.4 !important;
+                padding: 2rem !important;
+            }
+            .ipad-large-text .location-info {
+                font-size: 1.5rem !important;
+                line-height: 1.6 !important;
+            }
+            .ipad-large-text .ask-santa-btn {
+                font-size: 1.75rem !important;
+                padding: 1.5rem 3rem !important;
+                margin: 2rem 0 !important;
+            }
+            .ipad-large-text .status-bar {
+                font-size: 1.25rem !important;
+                padding: 1.5rem !important;
+            }
+            .ipad-large-text .config-text {
+                font-size: 1rem !important;
+            }
+        }
+
+        /* Family context indicator */
+        .family-indicator {
+            background: linear-gradient(45deg, #8b5cf6, #a855f7);
+            box-shadow: 0 4px 15px rgba(139, 92, 246, 0.3);
+        }
+    </style>
+</head>
+<body class="christmas-bg">
+    <div id="app"></div>
+
+    <script type="text/babel">
+        const { useState, useEffect, useRef } = React;
+
+        // SBC API Client
+        class SBCApiClient {
+            constructor() {
+                this.baseUrl = window.location.origin;
+            }
+
+            async generateMessage(promptType = 'delivering', context = {}) {
+                try {
+                    const response = await fetch(`${this.baseUrl}/api/generate`, {
+                        method: 'POST',
+                        headers: { 'Content-Type': 'application/json' },
+                        body: JSON.stringify({
+                            prompt_type: promptType,
+                            context: context
+                        })
+                    });
+
+                    const data = await response.json();
+
+                    if (!response.ok) {
+                        throw new Error(data.error || `HTTP ${response.status}`);
+                    }
+
+                    return data;
+                } catch (error) {
+                    console.error('SBC API Error:', error);
+                    throw error;
+                }
+            }
+
+            async getStatus() {
+                try {
+                    const response = await fetch(`${this.baseUrl}/api/groq/status`);
+                    return await response.json();
+                } catch (error) {
+                    console.error('Status check failed:', error);
+                    return { status: 'offline', error: error.message };
+                }
+            }
+
+            async getModels() {
+                try {
+                    const response = await fetch(`${this.baseUrl}/api/models`);
+                    return await response.json();
+                } catch (error) {
+                    console.error('Failed to get models:', error);
+                    return { models: [] };
+                }
+            }
+
+            async switchModel(modelName) {
+                try {
+                    const response = await fetch(`${this.baseUrl}/api/models/switch`, {
+                        method: 'POST',
+                        headers: { 'Content-Type': 'application/json' },
+                        body: JSON.stringify({ model: modelName })
+                    });
+                    return await response.json();
+                } catch (error) {
+                    console.error('Model switch failed:', error);
+                    throw error;
+                }
+            }
+
+            async getFamilyData() {
+                try {
+                    const response = await fetch(`${this.baseUrl}/api/family`);
+                    return await response.json();
+                } catch (error) {
+                    console.error('Failed to get family data:', error);
+                    return { hasData: false };
+                }
+            }
+
+            async reloadFamilyData() {
+                try {
+                    const response = await fetch(`${this.baseUrl}/api/family/reload`, {
+                        method: 'POST'
+                    });
+                    return await response.json();
+                } catch (error) {
+                    console.error('Failed to reload family data:', error);
+                    throw error;
+                }
+            }
+        }
+
+        // Initialize API client
+        const apiClient = new SBCApiClient();
+
+        // Santa Location Calculator
+        const SantaLocationCalculator = {
+            getCurrentLocation() {
+                const now = new Date();
+                const christmas = new Date(now.getFullYear(), 11, 25); // December 25
+                const timeDiff = christmas.getTime() - now.getTime();
+                const hoursUntilChristmas = timeDiff / (1000 * 3600);
+
+                if (hoursUntilChristmas > 24) {
+                    return {
+                        phase: 'preparing',
+                        location: 'North Pole',
+                        lat: 90,
+                        lng: 0,
+                        message: 'Santa is preparing for Christmas Eve!'
+                    };
+                } else if (hoursUntilChristmas > 0) {
+                    const progress = (24 - hoursUntilChristmas) / 24;
+                    const route = [
+                        { name: 'New Zealand', lat: -41.2, lng: 174.8 },
+                        { name: 'Australia', lat: -25.3, lng: 131.0 },
+                        { name: 'Japan', lat: 36.2, lng: 138.3 },
+                        { name: 'China', lat: 35.9, lng: 104.2 },
+                        { name: 'India', lat: 20.6, lng: 78.9 },
+                        { name: 'Russia', lat: 61.5, lng: 105.3 },
+                        { name: 'Europe', lat: 54.5, lng: 15.3 },
+                        { name: 'Africa', lat: -8.8, lng: 34.5 },
+                        { name: 'Brazil', lat: -14.2, lng: -51.9 },
+                        { name: 'USA', lat: 37.1, lng: -95.7 },
+                        { name: 'Canada', lat: 56.1, lng: -106.3 }
+                    ];
+
+                    const currentIndex = Math.floor(progress * route.length);
+                    const currentLocation = route[Math.min(currentIndex, route.length - 1)];
+
+                    return {
+                        phase: 'delivering',
+                        location: currentLocation.name,
+                        lat: currentLocation.lat,
+                        lng: currentLocation.lng,
+                        progress: Math.round(progress * 100),
+                        timeRemaining: Math.ceil(hoursUntilChristmas)
+                    };
+                } else {
+                    return {
+                        phase: 'finished',
+                        location: 'North Pole',
+                        lat: 90,
+                        lng: 0,
+                        message: 'Christmas deliveries complete! 🎅'
+                    };
+                }
+            }
+        };
+
+        // Santa Map Component for SBC
+        function SantaMapSBC({ isVisible, santaLocation, onClose }) {
+            const mapRef = useRef(null);
+            const mapInstance = useRef(null);
+
+            useEffect(() => {
+                if (isVisible && santaLocation && !mapInstance.current && mapRef.current) {
+                    console.log('🗺️ Initializing SBC Santa map...');
+
+                    // Initialize map
+                    const map = L.map(mapRef.current, {
+                        zoomControl: true,
+                        scrollWheelZoom: true,
+                        doubleClickZoom: true,
+                        touchZoom: true,
+                        dragging: true,
+                        preferCanvas: true
+                    }).setView([santaLocation.lat, santaLocation.lng], 4);
+
+                    // Add robust tile layer with fallbacks
+                    const tileProviders = [
+                        {
+                            url: 'https://{s}.basemaps.cartocdn.com/rastertiles/voyager/{z}/{x}/{y}{r}.png',
+                            attribution: '© <a href="https://carto.com/attributions">CARTO</a>',
+                            name: 'CartoDB Voyager'
+                        },
+                        {
+                            url: 'https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png',
+                            attribution: '© OpenStreetMap contributors',
+                            name: 'OpenStreetMap'
+                        }
+                    ];
+
+                    let currentProviderIndex = 0;
+
+                    const createTileLayer = (providerIndex = 0) => {
+                        if (providerIndex >= tileProviders.length) {
+                            console.error('❌ All tile providers failed');
+                            return null;
+                        }
+
+                        const provider = tileProviders[providerIndex];
+                        console.log(`🗺️ Loading tiles from: ${provider.name}`);
+
+                        const layer = L.tileLayer(provider.url, {
+                            maxZoom: 18,
+                            attribution: provider.attribution,
+                            timeout: 10000,
+                            errorTileUrl: 'data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAAAEAAAABCAYAAAAfFcSJAAAADUlEQVR42mP8/5+hHgAHggJ/PchI7wAAAABJRU5ErkJggg=='
+                        });
+
+                        layer.on('tileerror', () => {
+                            if (currentProviderIndex < tileProviders.length - 1) {
+                                currentProviderIndex++;
+                                console.log('🔄 Trying fallback provider...');
+                                map.removeLayer(layer);
+                                const fallbackLayer = createTileLayer(currentProviderIndex);
+                                if (fallbackLayer) fallbackLayer.addTo(map);
+                            }
+                        });
+
+                        return layer;
+                    };
+
+                    const tileLayer = createTileLayer();
+                    if (tileLayer) tileLayer.addTo(map);
+
+                    // Add Santa marker
+                    const santaIcon = L.divIcon({
+                        html: '🎅',
+                        className: 'santa-marker',
+                        iconSize: [30, 30],
+                        iconAnchor: [15, 15]
+                    });
+
+                    L.marker([santaLocation.lat, santaLocation.lng], { icon: santaIcon })
+                        .addTo(map)
+                        .bindPopup(`🎅 Santa is in ${santaLocation.location}!`);
+
+                    mapInstance.current = map;
+                }
+
+                return () => {
+                    if (mapInstance.current) {
+                        mapInstance.current.remove();
+                        mapInstance.current = null;
+                    }
+                };
+            }, [isVisible, santaLocation]);
+
+            if (!isVisible) return null;
+
+            return (
+                <div className="fixed inset-0 bg-black bg-opacity-75 flex items-center justify-center z-50" onClick={onClose}>
+                    <div className="bg-white rounded-lg p-4 max-w-4xl max-h-[80vh] w-full mx-4" onClick={e => e.stopPropagation()}>
+                        <div className="flex justify-between items-center mb-4">
+                            <h3 className="text-xl font-bold">🗺️ Santa's Location</h3>
+                            <button onClick={onClose} className="text-2xl hover:text-red-600">×</button>
+                        </div>
+                        <div ref={mapRef} className="w-full h-96 rounded-lg"></div>
+                        <div className="mt-4 text-center">
+                            <p className="text-lg">🎅 Santa is currently in <strong>{santaLocation?.location}</strong></p>
+                            {santaLocation?.progress && (
+                                <p className="text-sm text-gray-600">Progress: {santaLocation.progress}% complete</p>
+                            )}
+                        </div>
+                    </div>
+                </div>
+            );
+        }
+
+        // Main App Component
+        function SantaTrackerSBC() {
+            const [santaLocation, setSantaLocation] = useState(null);
+            const [santaMessage, setSantaMessage] = useState('');
+            const [isLoading, setIsLoading] = useState(false);
+            const [apiStatus, setApiStatus] = useState(null);
+            const [models, setModels] = useState([]);
+            const [currentModel, setCurrentModel] = useState('');
+            const [showConfig, setShowConfig] = useState(false);
+            const [error, setError] = useState(null);
+            const [familyData, setFamilyData] = useState({ hasData: false });
+            const [largeText, setLargeText] = useState(true); // Default to large text for iPad
+            const [showSantaMap, setShowSantaMap] = useState(false);
+
+            // Initialize
+            useEffect(() => {
+                updateSantaLocation();
+                checkApiStatus();
+                loadModels();
+                loadFamilyData();
+
+                const interval = setInterval(updateSantaLocation, 30000); // Update every 30s
+                return () => clearInterval(interval);
+            }, []);
+
+            const updateSantaLocation = () => {
+                const location = SantaLocationCalculator.getCurrentLocation();
+                setSantaLocation(location);
+            };
+
+            const checkApiStatus = async () => {
+                try {
+                    const status = await apiClient.getStatus();
+                    setApiStatus(status);
+                    setCurrentModel(status.defaultModel || '');
+                } catch (error) {
+                    setApiStatus({ status: 'offline', error: error.message });
+                }
+            };
+
+            const loadModels = async () => {
+                try {
+                    const data = await apiClient.getModels();
+                    setModels(data.models || []);
+                } catch (error) {
+                    console.error('Failed to load models:', error);
+                }
+            };
+
+            const loadFamilyData = async () => {
+                try {
+                    const data = await apiClient.getFamilyData();
+                    setFamilyData(data);
+                } catch (error) {
+                    console.error('Failed to load family data:', error);
+                }
+            };
+
+            const reloadFamilyDatabase = async () => {
+                try {
+                    const result = await apiClient.reloadFamilyData();
+                    await loadFamilyData();
+                    alert(result.message || 'Family database reloaded!');
+                } catch (error) {
+                    alert('Failed to reload family database: ' + error.message);
+                }
+            };
+
+            const generateSantaMessage = async () => {
+                if (!santaLocation || isLoading) return;
+
+                setIsLoading(true);
+                setError(null);
+
+                try {
+                    const context = {
+                        distance: santaLocation.location ? `Currently visiting ${santaLocation.location}.` : '',
+                        gifts: santaLocation.progress ? `${santaLocation.progress}% of deliveries completed.` : ''
+                    };
+
+                    const response = await apiClient.generateMessage(santaLocation.phase, context);
+
+                    if (response.error) {
+                        setError(response.error);
+                        setSantaMessage('Ho ho ho! Something went wrong, but Christmas magic will prevail! 🎅');
+                    } else {
+                        setSantaMessage(response.response);
+                    }
+                } catch (error) {
+                    setError(error.message);
+                    setSantaMessage('Ho ho ho! The North Pole connection is a bit snowy right now! 🎅');
+                } finally {
+                    setIsLoading(false);
+                }
+            };
+
+            const switchModel = async (modelName) => {
+                try {
+                    await apiClient.switchModel(modelName);
+                    setCurrentModel(modelName);
+                    checkApiStatus();
+                } catch (error) {
+                    setError(error.message);
+                }
+            };
+
+            const getStatusColor = () => {
+                if (!apiStatus) return 'gray';
+                return apiStatus.status === 'online' ? 'green' : 'red';
+            };
+
+            if (!santaLocation) {
+                return (
+                    <div className="flex items-center justify-center min-h-screen">
+                        <div className="text-white text-xl">🎅 Loading Santa's location...</div>
+                    </div>
+                );
+            }
+
+            return (
+                <div className={`min-h-screen p-4 ${largeText ? 'ipad-large-text' : ''}`}>
+                    <Snowfall />
+
+                    {/* Header */}
+                    <div className="text-center mb-8">
+                        <h1 className="text-5xl font-bold text-white mb-2">
+                            🎅 Santa Tracker SBC
+                        </h1>
+                        <div className="flex justify-center gap-4 mb-4 flex-wrap">
+                            <div className="sbc-badge text-white px-4 py-2 rounded-full text-sm">
+                                🚀 Hybrid Architecture
+                            </div>
+                            <div className="groq-badge text-white px-4 py-2 rounded-full text-sm">
+                                ⚡ Groq Powered
+                            </div>
+                            {familyData.hasData && (
+                                <div className="family-indicator text-white px-4 py-2 rounded-full text-sm">
+                                    🏠 {familyData.familyName} Family
+                                </div>
+                            )}
+                        </div>
+                        <p className="text-gray-300">
+                            Raspberry Pi 3B + Cloud AI = Christmas Magic! ✨
+                        </p>
+                    </div>
+
+                    {/* API Status */}
+                    <div className={`status-bar text-center mb-6 p-4 rounded-lg ${getStatusColor() === 'green' ? 'bg-green-900 border border-green-700' : 'bg-red-900 border border-red-700'}`}>
+                        <div className="text-white">
+                            Status: <span className="font-bold">{apiStatus?.status || 'checking...'}</span>
+                            {currentModel && (
+                                <span className="ml-4">Model: <span className="font-bold">{currentModel}</span></span>
+                            )}
+                            {familyData.hasData && (
+                                <span className="ml-4">📍 {familyData.location}</span>
+                            )}
+                        </div>
+                        {error && (
+                            <div className="text-red-300 text-sm mt-2">{error}</div>
+                        )}
+                    </div>
+
+                    {/* iPad Controls */}
+                    <div className="text-center mb-6">
+                        <div className="flex justify-center gap-4 flex-wrap">
+                            <button
+                                onClick={() => setLargeText(!largeText)}
+                                className="bg-purple-600 hover:bg-purple-700 text-white px-4 py-2 rounded-lg text-sm"
+                            >
+                                📱 {largeText ? 'Small Text' : 'Large Text'}
+                            </button>
+                            {familyData.hasData && (
+                                <button
+                                    onClick={reloadFamilyDatabase}
+                                    className="bg-indigo-600 hover:bg-indigo-700 text-white px-4 py-2 rounded-lg text-sm"
+                                    title="Emergency IT Parent Override!"
+                                >
+                                    🔄 Reload Family Data
+                                </button>
+                            )}
+                        </div>
+                    </div>
+
+                    {/* Main Content */}
+                    <div className="max-w-4xl mx-auto">
+                        <div className="grid md:grid-cols-2 gap-8">
+                            {/* Santa's Location */}
+                            <div className="bg-white/10 backdrop-blur rounded-lg p-6 border border-white/20">
+                                <h2 className="text-2xl font-bold text-white mb-4">🌍 Santa's Location</h2>
+
+                                <div className="location-info text-white space-y-3">
+                                    <div>
+                                        <strong>Current Location:</strong> {santaLocation.location}
+                                    </div>
+
+                                    {santaLocation.phase === 'delivering' && (
+                                        <>
+                                            <div>
+                                                <strong>Progress:</strong> {santaLocation.progress}%
+                                            </div>
+                                            <div>
+                                                <strong>Time Until Christmas:</strong> {santaLocation.timeRemaining} hours
+                                            </div>
+                                            <div className="bg-gray-700 rounded-full h-4">
+                                                <div
+                                                    className="bg-red-500 rounded-full h-4 transition-all duration-500"
+                                                    style={{ width: `${santaLocation.progress}%` }}
+                                                ></div>
+                                            </div>
+                                        </>
+                                    )}
+
+                                    {santaLocation.phase === 'preparing' && (
+                                        <div className="text-yellow-300">
+                                            🎁 Elves are wrapping presents at the North Pole!
+                                        </div>
+                                    )}
+
+                                    {santaLocation.phase === 'finished' && (
+                                        <div className="text-green-300">
+                                            🎉 All presents delivered! Santa is resting.
+                                        </div>
+                                    )}
+
+                                    <div className="mt-4">
+                                        <button
+                                            onClick={() => setShowSantaMap(true)}
+                                            className="bg-blue-600 hover:bg-blue-700 text-white px-4 py-2 rounded-lg transition-colors"
+                                        >
+                                            🗺️ Show Santa on Map
+                                        </button>
+                                    </div>
+                                </div>
+                            </div>
+
+                            {/* Santa's Message */}
+                            <div className="bg-white/10 backdrop-blur rounded-lg p-6 border border-white/20">
+                                <h2 className="text-2xl font-bold text-white mb-4">💬 Message from Santa</h2>
+
+                                <div className="mb-4">
+                                    <button
+                                        onClick={generateSantaMessage}
+                                        disabled={isLoading || apiStatus?.status !== 'online'}
+                                        className="ask-santa-btn bg-red-600 hover:bg-red-700 disabled:bg-gray-600 text-white px-6 py-3 rounded-lg font-bold transition-all duration-200 disabled:cursor-not-allowed"
+                                    >
+                                        {isLoading ? '🤖 Generating...' : '🎅 Ask Santa!'}
+                                    </button>
+                                </div>
+
+                                {santaMessage && (
+                                    <div className="santa-message bg-red-900/50 border border-red-700 rounded-lg p-4">
+                                        <div className="text-white text-lg leading-relaxed">
+                                            "{santaMessage}"
+                                        </div>
+                                        <div className="text-red-300 text-sm mt-2">
+                                            — Santa Claus 🎅
+                                            {familyData.hasData && (
+                                                <span className="ml-2 text-purple-300">✨ Personalized</span>
+                                            )}
+                                        </div>
+                                    </div>
+                                )}
+
+                                {!santaMessage && !isLoading && (
+                                    <div className="text-gray-400 italic">
+                                        Click the button to get a personalized message from Santa!
+                                    </div>
+                                )}
+                            </div>
+                        </div>
+
+                        {/* Configuration Panel */}
+                        <div className="mt-8">
+                            <button
+                                onClick={() => setShowConfig(!showConfig)}
+                                className="bg-blue-600 hover:bg-blue-700 text-white px-4 py-2 rounded-lg mb-4"
+                            >
+                                ⚙️ {showConfig ? 'Hide' : 'Show'} Configuration
+                            </button>
+
+                            {showConfig && (
+                                <div className="config-text bg-white/10 backdrop-blur rounded-lg p-6 border border-white/20">
+                                    <h3 className="text-xl font-bold text-white mb-4">🔧 SBC Configuration</h3>
+
+                                    <div className="grid md:grid-cols-2 gap-6">
+                                        <div>
+                                            <h4 className="text-white font-bold mb-2">Available Models</h4>
+                                            <div className="space-y-2">
+                                                {models.map((model) => (
+                                                    <button
+                                                        key={model.name}
+                                                        onClick={() => switchModel(model.name)}
+                                                        className={`w-full text-left p-3 rounded border transition-all ${
+                                                            currentModel === model.name
+                                                                ? 'bg-blue-900 border-blue-700 text-white'
+                                                                : 'bg-gray-800 border-gray-600 text-gray-300 hover:bg-gray-700'
+                                                        }`}
+                                                    >
+                                                        <div className="font-bold">{model.displayName}</div>
+                                                        <div className="text-sm opacity-80">{model.description}</div>
+                                                        {model.maxTokens && (
+                                                            <div className="text-xs opacity-60">
+                                                                Max tokens: {model.maxTokens}
+                                                            </div>
+                                                        )}
+                                                    </button>
+                                                ))}
+                                            </div>
+                                        </div>
+
+                                        <div>
+                                            <h4 className="text-white font-bold mb-2">System Info</h4>
+                                            <div className="bg-gray-900 rounded p-3 font-mono text-sm text-gray-300">
+                                                <div>Architecture: Hybrid SBC</div>
+                                                <div>Host: Raspberry Pi 3B</div>
+                                                <div>AI Provider: Groq Cloud</div>
+                                                <div>Frontend: React + Tailwind</div>
+                                                <div>Backend: Flask + Python</div>
+                                                <div>Real-time: WebSocket Ready</div>
+                                            </div>
+                                        </div>
+                                    </div>
+                                </div>
+                            )}
+                        </div>
+
+                        {/* Footer */}
+                        <div className="text-center mt-12 text-gray-400">
+                            <div className="mb-2">
+                                🎄 Santa Tracker SBC - Hybrid Cloud Architecture 🎄
+                            </div>
+                            <div className="text-sm">
+                                Powered by Raspberry Pi 3B + Groq AI + Christmas Magic ✨
+                            </div>
+                        </div>
+                    </div>
+
+                    {/* Santa Map Modal */}
+                    <SantaMapSBC
+                        isVisible={showSantaMap}
+                        santaLocation={santaLocation}
+                        onClose={() => setShowSantaMap(false)}
+                    />
+                </div>
+            );
+        }
+
+        // Snowfall Effect Component
+        function Snowfall() {
+            const [snowflakes, setSnowflakes] = useState([]);
+
+            useEffect(() => {
+                const createSnowflake = () => ({
+                    id: Math.random(),
+                    left: Math.random() * 100,
+                    animationDuration: Math.random() * 3 + 2,
+                    opacity: Math.random(),
+                    fontSize: Math.random() * 10 + 10,
+                });
+
+                const initialSnowflakes = Array.from({ length: 50 }, createSnowflake);
+                setSnowflakes(initialSnowflakes);
+
+                const interval = setInterval(() => {
+                    setSnowflakes(prev => {
+                        const newSnowflakes = [...prev];
+                        if (newSnowflakes.length < 50) {
+                            newSnowflakes.push(createSnowflake());
+                        }
+                        return newSnowflakes.slice(-50); // Keep only last 50
+                    });
+                }, 300);
+
+                return () => clearInterval(interval);
+            }, []);
+
+            return (
+                <div className="fixed inset-0 pointer-events-none overflow-hidden">
+                    {snowflakes.map((flake) => (
+                        <div
+                            key={flake.id}
+                            className="snowflake"
+                            style={{
+                                left: `${flake.left}%`,
+                                animationDuration: `${flake.animationDuration}s`,
+                                opacity: flake.opacity,
+                                fontSize: `${flake.fontSize}px`,
+                            }}
+                        >
+                            ❄
+                        </div>
+                    ))}
+                </div>
+            );
+        }
+
+        // Render App
+        ReactDOM.render(<SantaTrackerSBC />, document.getElementById('app'));
+    </script>
+</body>
+</html>

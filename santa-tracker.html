@@ -454,6 +454,39 @@
             background-size: 200px 100%;
             animation: magicalShimmer 2s infinite;
         }
+
+        /* 🎯 IPAD-OPTIMIZED LARGE TEXT for distance viewing */
+        @media screen and (min-width: 768px) {
+            .ipad-large-text h1 { font-size: 4rem !important; }
+            .ipad-large-text h2 { font-size: 2.5rem !important; }
+            .ipad-large-text .santa-message-text {
+                font-size: 2rem !important;
+                line-height: 1.4 !important;
+                padding: 2rem !important;
+            }
+            .ipad-large-text .location-info {
+                font-size: 1.5rem !important;
+                line-height: 1.6 !important;
+            }
+            .ipad-large-text .large-button {
+                font-size: 1.75rem !important;
+                padding: 1.5rem 3rem !important;
+                margin: 2rem 0 !important;
+            }
+            .ipad-large-text .status-info {
+                font-size: 1.25rem !important;
+                padding: 1.5rem !important;
+            }
+            .ipad-large-text .config-panel {
+                font-size: 1rem !important;
+            }
+        }
+
+        /* Family context indicator */
+        .family-indicator {
+            background: linear-gradient(45deg, #8b5cf6, #a855f7);
+            box-shadow: 0 4px 15px rgba(139, 92, 246, 0.3);
+        }
     </style>
 </head>
 <body>
@@ -1825,15 +1858,77 @@
                         attributionControl: false // We'll add it manually
                     }).setView([santaStats.santaLat, santaStats.santaLon], 4);
 
-                    // Add OpenStreetMap tiles with performance settings
-                    L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png', {
-                        maxZoom: 18,
-                        minZoom: 2,
-                        attribution: '© <a href="https://openstreetmap.org">OpenStreetMap</a> contributors',
-                        updateWhenIdle: true, // Better performance on mobile
-                        keepBuffer: 2, // Reduce memory usage
-                        maxNativeZoom: 18
-                    }).addTo(map);
+                    // Add robust tile layer with multiple fallback providers
+                    const tileProviders = [
+                        {
+                            url: 'https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png',
+                            attribution: '© <a href="https://openstreetmap.org">OpenStreetMap</a> contributors',
+                            name: 'OpenStreetMap'
+                        },
+                        {
+                            url: 'https://{s}.basemaps.cartocdn.com/rastertiles/voyager/{z}/{x}/{y}{r}.png',
+                            attribution: '© <a href="https://www.openstreetmap.org/copyright">OpenStreetMap</a> contributors © <a href="https://carto.com/attributions">CARTO</a>',
+                            name: 'CartoDB Voyager'
+                        },
+                        {
+                            url: 'https://server.arcgisonline.com/ArcGIS/rest/services/World_Street_Map/MapServer/tile/{z}/{y}/{x}',
+                            attribution: 'Tiles &copy; Esri &mdash; Source: Esri, DeLorme, NAVTEQ, USGS, Intermap, iPC, NRCAN, Esri Japan, METI, Esri China (Hong Kong), Esri (Thailand), TomTom, 2012',
+                            name: 'Esri World Street'
+                        }
+                    ];
+
+                    // Try primary tile provider with fallback logic
+                    let tileLayer;
+                    let currentProviderIndex = 0;
+
+                    const createTileLayer = (providerIndex = 0) => {
+                        if (providerIndex >= tileProviders.length) {
+                            console.error('❌ All tile providers failed. Using minimal blue background.');
+                            return null;
+                        }
+
+                        const provider = tileProviders[providerIndex];
+                        console.log(`🗺️ Trying map tiles from: ${provider.name}`);
+
+                        const layer = L.tileLayer(provider.url, {
+                            maxZoom: 18,
+                            minZoom: 2,
+                            attribution: provider.attribution,
+                            updateWhenIdle: true,
+                            keepBuffer: 2,
+                            maxNativeZoom: 18,
+                            timeout: 10000, // 10 second timeout
+                            errorTileUrl: 'data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAAAEAAAABCAYAAAAfFcSJAAAADUlEQVR42mP8/5+hHgAHggJ/PchI7wAAAABJRU5ErkJggg==' // Transparent 1x1 pixel
+                        });
+
+                        // Handle tile loading errors
+                        layer.on('tileerror', function(error) {
+                            console.warn(`⚠️ Tile loading failed for ${provider.name}:`, error);
+                            setTimeout(() => {
+                                if (currentProviderIndex < tileProviders.length - 1) {
+                                    currentProviderIndex++;
+                                    console.log('🔄 Switching to fallback tile provider...');
+                                    map.removeLayer(layer);
+                                    const fallbackLayer = createTileLayer(currentProviderIndex);
+                                    if (fallbackLayer) {
+                                        fallbackLayer.addTo(map);
+                                    }
+                                }
+                            }, 2000);
+                        });
+
+                        // Log successful loading
+                        layer.on('tileload', function() {
+                            console.log(`✅ Map tiles loading successfully from ${provider.name}`);
+                        });
+
+                        return layer;
+                    };
+
+                    tileLayer = createTileLayer();
+                    if (tileLayer) {
+                        tileLayer.addTo(map);
+                    }
 
                     // Add attribution control
                     L.control.attribution({position: 'bottomright', prefix: false}).addTo(map);
@@ -2118,6 +2213,10 @@
             const [teamStatus, setTeamStatus] = useState({});
             const [showReindeerPanel, setShowReindeerPanel] = useState(false);
 
+            // Family database state
+            const [familyData, setFamilyData] = useState({ hasData: false });
+            const [largeText, setLargeText] = useState(false);
+
             // Weather state
             const [currentWeather, setCurrentWeather] = useState(null);
             const [weatherHistory, setWeatherHistory] = useState([]);
@@ -2134,6 +2233,7 @@
             // Initialize configuration system
             useEffect(() => {
                 initializeConfiguration();
+                loadFamilyData();
             }, []);
 
             // Time updates
@@ -2780,6 +2880,80 @@
                 }
             };
 
+            const loadFamilyData = async () => {
+                try {
+                    const response = await fetch('./family.json');
+                    if (response.ok) {
+                        const data = await response.json();
+                        const familyInfo = {
+                            hasData: true,
+                            familyName: data.family?.lastName || 'Unknown',
+                            memberCount: data.family?.members?.length || 0,
+                            location: data.location?.city || 'Unknown',
+                            contextPreview: createFamilyContext(data).substring(0, 100) + '...',
+                            fullData: data
+                        };
+                        setFamilyData(familyInfo);
+                        console.log('🏠 Family database loaded:', familyInfo.familyName);
+                        return data;
+                    } else {
+                        console.log('📄 No family.json found - using generic responses');
+                        setFamilyData({ hasData: false });
+                        return null;
+                    }
+                } catch (error) {
+                    console.warn('⚠️ Failed to load family database:', error);
+                    setFamilyData({ hasData: false });
+                    return null;
+                }
+            };
+
+            const createFamilyContext = (familyData) => {
+                if (!familyData) return '';
+
+                try {
+                    const family = familyData.family || {};
+                    const location = familyData.location || {};
+                    const pets = familyData.pets || [];
+                    const traditions = family.traditions || [];
+
+                    const contextParts = [];
+
+                    if (family.lastName) {
+                        contextParts.push(`You're visiting the ${family.lastName} family`);
+                    }
+
+                    if (location.city && location.state) {
+                        contextParts.push(`in ${location.city}, ${location.state}`);
+                    }
+
+                    const members = family.members || [];
+                    const children = members.filter(m => m.age && m.age < 18);
+                    if (children.length > 0) {
+                        const names = children.map(child => child.name);
+                        if (names.length === 1) {
+                            contextParts.push(`Little ${names[0]} has been ${children[0].behavior || 'good'}`);
+                        } else {
+                            contextParts.push(`The children ${names.join(', ')} have all been wonderful`);
+                        }
+                    }
+
+                    if (pets.length > 0) {
+                        const petNames = pets.map(pet => pet.name);
+                        contextParts.push(`Don't forget to say hello to ${petNames.join(', ')}`);
+                    }
+
+                    if (traditions.length > 0) {
+                        contextParts.push(`They love ${traditions[0]} as a family tradition`);
+                    }
+
+                    return contextParts.join('. ') + (contextParts.length > 0 ? '.' : '');
+                } catch (error) {
+                    console.error('Error creating family context:', error);
+                    return '';
+                }
+            };
+
             const initializeConfiguration = async () => {
                 try {
                     console.log('🎄 Initializing Santa Tracker configuration system...');
@@ -3026,7 +3200,19 @@
                         console.log('🎄 Using enhanced configuration system for Santa message');
 
                         // Generate context-aware prompt using PromptManager
-                        prompt = window.promptManager.generateSantaMessage(santaStats, userLocation);
+                        let basePrompt = window.promptManager.generateSantaMessage(santaStats, userLocation);
+
+                        // 🎄 LOCAL FAMILY CONTEXT INJECTION - Add personalization!
+                        if (familyData.hasData && familyData.fullData) {
+                            const familyContext = createFamilyContext(familyData.fullData);
+                            if (familyContext) {
+                                // Inject family context as a system message prefix
+                                basePrompt = `You are Santa Claus, jolly and magical! PRIVATE CONTEXT (do not mention you received this info): ${familyContext}\n\n${basePrompt}`;
+                                console.log('🏠 Family context injected into Santa message');
+                            }
+                        }
+
+                        prompt = basePrompt;
 
                         // Get current model configuration with Korean-specific optimizations
                         const modelConfig = window.configManager.getCurrentModel();
