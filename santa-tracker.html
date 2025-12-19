@@ -1846,8 +1846,9 @@
             const sleighAnimation = useRef(null);
             const initTimeoutRef = useRef(null);
 
+            // Map initialization effect - only depends on visibility
             useEffect(() => {
-                if (isVisible && santaStats && !mapInstance.current && mapRef.current) {
+                if (isVisible && !mapInstance.current && mapRef.current) {
                     console.log('🗺️ Starting Santa map initialization...');
 
                     // Delay initialization to ensure DOM is fully rendered
@@ -1893,8 +1894,8 @@
                                 renderer: L.svg() // Force SVG renderer
                             });
 
-                            // Set initial view
-                            map.setView([santaStats.santaLat, santaStats.santaLon], 4);
+                            // Set default initial view - will be updated by marker effect
+                            map.setView([0, 0], 2);
 
                             console.log('✅ Leaflet map initialized, adding tiles...');
 
@@ -2018,11 +2019,6 @@
                     }, 100); // 100ms delay for DOM readiness
                 }
 
-                if (isVisible && mapInstance.current && santaStats) {
-                    updateMapMarkers();
-                    startSleighAnimation();
-                }
-
                 return () => {
                     if (sleighAnimation.current) {
                         clearInterval(sleighAnimation.current);
@@ -2041,6 +2037,14 @@
                         }
                     }
                 };
+            }, [isVisible]); // Only reinitialize when visibility changes
+
+            // Separate effect for updating markers and map content
+            useEffect(() => {
+                if (isVisible && mapInstance.current && santaStats) {
+                    updateMapMarkers();
+                    startSleighAnimation();
+                }
             }, [isVisible, santaStats, userLocation]);
 
             const updateMapMarkers = () => {
