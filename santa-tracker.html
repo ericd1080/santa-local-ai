@@ -2358,8 +2358,14 @@
                         // Use more conservative settings for Korean to improve consistency
                         const baseOptions = modelConfig?.parameters || {
                             temperature: 0.8,
-                            num_predict: 150
+                            num_predict: 500  // Default to higher token count for thinking models
                         };
+
+                        // Debug logging for configuration issues
+                        console.log('🔧 Model config debug:');
+                        console.log('   Current model:', window.configManager.get('aiProvider.defaultModel'));
+                        console.log('   Model config object:', modelConfig);
+                        console.log('   Base options being used:', baseOptions);
 
                         // Korean-specific AI configuration with optimized models
                         if (currentLanguage === 'ko') {
@@ -2378,8 +2384,8 @@
                                     temperature: 0.8,    // Higher temperature for more creativity
                                     top_p: 0.9,         // More flexible sampling
                                     top_k: 50,          // More vocabulary choices
-                                    repeat_penalty: 1.1, // Lower repetition penalty
-                                    num_predict: 150     // Standard response length
+                                    repeat_penalty: 1.1  // Lower repetition penalty
+                                    // num_predict comes from baseOptions (config)
                                 }
                             };
                         } else {
@@ -2437,16 +2443,16 @@ ${context}
 
                         // Korean-specific AI configuration for fallback
                         if (currentLanguage === 'ko') {
-                            // Use gemma3:latest - confirmed working model for Korean
-                            console.log('🇰🇷 Using fallback Korean model: gemma3:latest');
+                            // Use qwen3:latest for Korean (now working with proper tokens)
+                            console.log('🇰🇷 Using fallback Korean model: qwen3:latest');
                             aiConfig = {
-                                model: "gemma3:latest",
+                                model: "qwen3:latest",
                                 options: {
                                     temperature: 0.8,    // Higher temperature for more creativity
                                     top_p: 0.9,         // More flexible sampling
                                     top_k: 50,          // More vocabulary choices
                                     repeat_penalty: 1.1, // Lower repetition penalty
-                                    num_predict: 150     // Standard response length
+                                    num_predict: 500     // Sufficient for qwen3:latest thinking mechanism
                                 }
                             };
                         } else {
@@ -2454,7 +2460,7 @@ ${context}
                                 model: "llama3:latest",
                                 options: {
                                     temperature: 0.8,
-                                    num_predict: 150
+                                    num_predict: 150  // Sufficient for English responses
                                 }
                             };
                         }
