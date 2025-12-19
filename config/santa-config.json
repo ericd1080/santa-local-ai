@@ -29,12 +29,13 @@
       {
         "name": "qwen3:latest",
         "displayName": "Qwen 3 Latest",
-        "description": "Excellent for Korean language support",
+        "description": "Excellent for Korean language support (uses thinking mechanism)",
         "parameters": {
-          "temperature": 0.6,
-          "num_predict": 160,
-          "top_p": 0.8,
-          "top_k": 30
+          "temperature": 0.8,
+          "num_predict": 300,
+          "top_p": 0.9,
+          "top_k": 50,
+          "repeat_penalty": 1.1
         }
       },
       {
