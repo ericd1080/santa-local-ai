@@ -2518,6 +2518,7 @@
 
                         // For English, use the original format
                         if (currentLanguage !== 'ko') {
+                            const santaPromptPrefix = window.languageManager.getSantaPromptPrefix();
                             prompt = `${santaPromptPrefix}${context} Be jolly, mention the reindeer if relevant, and keep it magical and brief. Use emojis sparingly (1-2 max). Don't use quotation marks.`;
                         }
 

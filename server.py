@@ -231,6 +231,16 @@ class SantaTrackerHandler(http.server.SimpleHTTPRequestHandler):
             content_length = int(self.headers.get('Content-Length', 0))
             post_data = self.rfile.read(content_length) if content_length > 0 else b''
 
+            # Add debugging for API requests
+            if self.path == '/api/generate' and post_data:
+                try:
+                    request_json = json.loads(post_data.decode('utf-8'))
+                    print(f"\n🚀 AI Request to {request_json.get('model', 'unknown')}:")
+                    print(f"📝 Prompt: {request_json.get('prompt', 'empty')[:200]}...")
+                    print(f"⚙️ Options: {request_json.get('options', {})}")
+                except:
+                    print(f"🚀 AI Request (raw): {post_data[:200]}...")
+
             req = urllib.request.Request(
                 f"{OLLAMA_URL}{self.path}",
                 data=post_data,
@@ -239,6 +249,17 @@ class SantaTrackerHandler(http.server.SimpleHTTPRequestHandler):
 
             with urllib.request.urlopen(req, timeout=120) as response:
                 response_data = response.read()
+
+                # Add debugging for AI responses
+                if self.path == '/api/generate':
+                    try:
+                        response_json = json.loads(response_data.decode('utf-8'))
+                        ai_response = response_json.get('response', '')
+                        print(f"🤖 AI Response ({len(ai_response)} chars): {ai_response[:100]}...")
+                        print(f"✅ Done: {response_json.get('done', False)}\n")
+                    except:
+                        print(f"🤖 AI Response (raw): {response_data[:200]}...\n")
+
                 self.send_response(200)
                 self.send_header('Content-Type', 'application/json')
                 self.end_headers()
