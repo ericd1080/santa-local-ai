@@ -29,6 +29,8 @@ class LanguageManager {
             'button.openConfig': 'Open Configuration',
             'button.enableSound': 'Enable Sound Effects',
             'button.disableSound': 'Disable Sound Effects',
+            'button.showOnMap': 'View Santa\'s Location',
+            'button.specialDelivery': 'Send Gifts to My Location',
 
             // Santa Stats
             'stats.status': 'Status',
@@ -271,6 +273,8 @@ class LanguageManager {
             'button.openConfig': '설정 열기',
             'button.enableSound': '음향 효과 활성화',
             'button.disableSound': '음향 효과 비활성화',
+            'button.showOnMap': '산타 위치 보기',
+            'button.specialDelivery': '내 위치로 선물 보내기',
 
             // Santa Stats
             'stats.status': '상태',
