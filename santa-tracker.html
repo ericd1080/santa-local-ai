@@ -2363,10 +2363,13 @@
 
                         // Korean-specific AI configuration with optimized models
                         if (currentLanguage === 'ko') {
-                            // Use Korean-optimized models for better language support
+                            // Use Korean-optimized models - gemma3 first as it's known working
                             const koreanModels = ['gemma3:latest', 'qwen3:latest'];
                             const currentModel = window.configManager.get('aiProvider.defaultModel');
-                            const preferredModel = koreanModels.includes(currentModel) ? currentModel : 'gemma3:latest';
+
+                            // Force gemma3:latest for Korean since qwen3 is returning empty responses
+                            const preferredModel = 'gemma3:latest';
+                            console.log('🇰🇷 Using Korean-optimized model:', preferredModel);
 
                             aiConfig = {
                                 model: preferredModel,
@@ -2434,7 +2437,8 @@ ${context}
 
                         // Korean-specific AI configuration for fallback
                         if (currentLanguage === 'ko') {
-                            // Use Korean-optimized models for fallback too
+                            // Use gemma3:latest - confirmed working model for Korean
+                            console.log('🇰🇷 Using fallback Korean model: gemma3:latest');
                             aiConfig = {
                                 model: "gemma3:latest",
                                 options: {
@@ -2469,11 +2473,10 @@ ${context}
                         options: aiConfig.options
                     };
 
-                    console.log('🚀 Making AI request:', {
-                        model: requestData.model,
-                        prompt: requestData.prompt?.substring(0, 100) + '...',
-                        options: requestData.options
-                    });
+                    console.log('🚀 Making AI request:');
+                    console.log('   Model:', requestData.model);
+                    console.log('   Prompt:', requestData.prompt?.substring(0, 150) + '...');
+                    console.log('   Options:', JSON.stringify(requestData.options, null, 2));
 
                     const response = await fetch("/api/generate", {
                         method: "POST",
@@ -2492,10 +2495,13 @@ ${context}
                     }
 
                     const data = await response.json();
-                    console.log('📦 Response data:', data);
+                    console.log('📦 Response data:');
+                    console.log('   Response field:', data.response);
+                    console.log('   Done:', data.done);
+                    console.log('   Full data:', JSON.stringify(data, null, 2));
                     let message = data.response || '';
 
-                    console.log('📝 Extracted message:', message);
+                    console.log('📝 Extracted message length:', message.length, 'Content:', message);
 
                     // Korean language purity validation
                     if (currentLanguage === 'ko') {
