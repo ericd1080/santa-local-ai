@@ -93,13 +93,13 @@ class SoundManager {
     }
 
     generateDemoSound(type) {
-        // Generate demo audio data URLs for different sound types
+        // Generate proper Christmas-themed sounds instead of basic beeps
         const demoSounds = {
-            sleighBells: this.createToneDataURL([800, 1000, 1200], 0.5, 0.3),
-            hoHoHo: this.createToneDataURL([200, 300, 200], 0.8, 0.8),
-            jingleBells: this.createToneDataURL([600, 800, 1000, 800], 0.4, 1.2),
-            giftDrop: this.createToneDataURL([400, 200], 0.3, 0.2),
-            notification: this.createToneDataURL([800], 0.3, 0.3)
+            sleighBells: this.createSleighBellsSound(),
+            hoHoHo: this.createHoHoHoSound(),
+            jingleBells: this.createJingleBellsSound(),
+            giftDrop: this.createGiftDropSound(),
+            notification: this.createNotificationSound()
         };
 
         return demoSounds[type] || demoSounds.notification;
@@ -121,6 +121,171 @@ class SoundManager {
             }
             // Apply envelope (fade in/out)
             const envelope = Math.sin(Math.PI * i / numSamples);
+            buffer[i] = (sample / frequencies.length) * volume * envelope;
+        }
+
+        return this.floatArrayToDataURL(buffer, sampleRate);
+    }
+
+    // Create realistic Christmas sounds
+    createSleighBellsSound() {
+        // Multiple overlapping bell tones with natural decay
+        return this.createBellSound([800, 1000, 1200, 1600], 0.5, 0.8);
+    }
+
+    createHoHoHoSound() {
+        // Deep rhythmic "Ho Ho Ho" pattern
+        return this.createLaughSound([150, 120, 150], 0.6, 1.2);
+    }
+
+    createJingleBellsSound() {
+        // Classic jingle bells melody pattern
+        return this.createMelodySound([
+            { freq: 659, duration: 0.2 }, // E
+            { freq: 659, duration: 0.2 }, // E
+            { freq: 659, duration: 0.4 }, // E
+            { freq: 659, duration: 0.2 }, // E
+            { freq: 659, duration: 0.2 }, // E
+            { freq: 659, duration: 0.4 }  // E
+        ], 0.4);
+    }
+
+    createGiftDropSound() {
+        // Magical descending "whoosh" sound
+        return this.createSwooshSound(600, 200, 0.3, 0.6);
+    }
+
+    createNotificationSound() {
+        // Pleasant chime with harmonics
+        return this.createChimeSound([800, 1200, 1600], 0.3, 0.5);
+    }
+
+    createBellSound(frequencies, volume, duration) {
+        if (!this.audioContext) return 'data:audio/wav;base64,';
+
+        const sampleRate = 44100;
+        const numSamples = Math.floor(sampleRate * duration);
+        const buffer = new Float32Array(numSamples);
+
+        for (let i = 0; i < numSamples; i++) {
+            let sample = 0;
+            const t = i / sampleRate;
+
+            // Create bell sound with multiple harmonics and natural decay
+            for (const freq of frequencies) {
+                const decay = Math.exp(-t * 3); // Natural decay
+                const bell = Math.sin(2 * Math.PI * freq * t) * decay;
+                const sparkle = Math.sin(2 * Math.PI * freq * 2 * t) * 0.3 * decay;
+                sample += (bell + sparkle);
+            }
+
+            // Apply overall envelope
+            const envelope = Math.exp(-t * 2);
+            buffer[i] = (sample / frequencies.length) * volume * envelope;
+        }
+
+        return this.floatArrayToDataURL(buffer, sampleRate);
+    }
+
+    createLaughSound(frequencies, volume, duration) {
+        if (!this.audioContext) return 'data:audio/wav;base64,';
+
+        const sampleRate = 44100;
+        const numSamples = Math.floor(sampleRate * duration);
+        const buffer = new Float32Array(numSamples);
+
+        for (let i = 0; i < numSamples; i++) {
+            let sample = 0;
+            const t = i / sampleRate;
+
+            // Create "Ho Ho Ho" rhythm pattern
+            const hoPattern = Math.floor(t * 3) % 1; // 3 "ho"s per second
+            const hoEnvelope = hoPattern < 0.3 ? Math.sin(Math.PI * hoPattern / 0.3) : 0;
+
+            for (const freq of frequencies) {
+                const wobble = 1 + 0.1 * Math.sin(2 * Math.PI * 5 * t); // Voice wobble
+                sample += Math.sin(2 * Math.PI * freq * wobble * t) * hoEnvelope;
+            }
+
+            buffer[i] = (sample / frequencies.length) * volume;
+        }
+
+        return this.floatArrayToDataURL(buffer, sampleRate);
+    }
+
+    createMelodySound(notes, volume) {
+        if (!this.audioContext) return 'data:audio/wav;base64,';
+
+        const sampleRate = 44100;
+        let totalDuration = notes.reduce((sum, note) => sum + note.duration, 0);
+        const numSamples = Math.floor(sampleRate * totalDuration);
+        const buffer = new Float32Array(numSamples);
+
+        let currentTime = 0;
+        for (const note of notes) {
+            const startSample = Math.floor(currentTime * sampleRate);
+            const noteSamples = Math.floor(note.duration * sampleRate);
+
+            for (let i = 0; i < noteSamples && (startSample + i) < numSamples; i++) {
+                const t = i / sampleRate;
+                const envelope = Math.sin(Math.PI * t / note.duration) * 0.8; // Note envelope
+                const sample = Math.sin(2 * Math.PI * note.freq * t) * envelope * volume;
+                buffer[startSample + i] += sample;
+            }
+
+            currentTime += note.duration;
+        }
+
+        return this.floatArrayToDataURL(buffer, sampleRate);
+    }
+
+    createSwooshSound(startFreq, endFreq, volume, duration) {
+        if (!this.audioContext) return 'data:audio/wav;base64,';
+
+        const sampleRate = 44100;
+        const numSamples = Math.floor(sampleRate * duration);
+        const buffer = new Float32Array(numSamples);
+
+        for (let i = 0; i < numSamples; i++) {
+            const t = i / sampleRate;
+            const progress = t / duration;
+
+            // Frequency sweeps down
+            const freq = startFreq + (endFreq - startFreq) * progress;
+
+            // Add some noise for "whoosh" effect
+            const noise = (Math.random() - 0.5) * 0.2;
+            const tone = Math.sin(2 * Math.PI * freq * t);
+
+            // Envelope that starts strong and fades
+            const envelope = Math.exp(-progress * 3);
+
+            buffer[i] = (tone + noise) * volume * envelope;
+        }
+
+        return this.floatArrayToDataURL(buffer, sampleRate);
+    }
+
+    createChimeSound(frequencies, volume, duration) {
+        if (!this.audioContext) return 'data:audio/wav;base64,';
+
+        const sampleRate = 44100;
+        const numSamples = Math.floor(sampleRate * duration);
+        const buffer = new Float32Array(numSamples);
+
+        for (let i = 0; i < numSamples; i++) {
+            let sample = 0;
+            const t = i / sampleRate;
+
+            // Create harmonious chime with overtones
+            for (let j = 0; j < frequencies.length; j++) {
+                const freq = frequencies[j];
+                const harmonicDecay = Math.exp(-t * (j + 1)); // Higher harmonics decay faster
+                sample += Math.sin(2 * Math.PI * freq * t) * harmonicDecay;
+            }
+
+            // Pleasant envelope
+            const envelope = Math.exp(-t * 2) * Math.sin(Math.PI * t / duration);
             buffer[i] = (sample / frequencies.length) * volume * envelope;
         }
 
@@ -171,13 +336,13 @@ class SoundManager {
             return;
         }
 
-        // Ensure AudioContext is resumed (required after user interaction)
-        if (this.audioContext && this.audioContext.state === 'suspended') {
-            try {
-                await this.audioContext.resume();
-            } catch (error) {
-                // Ignore - will be handled by user interaction
-            }
+        // Only try to resume AudioContext if it's been enabled by user interaction
+        // Don't attempt resume before user interaction to avoid warnings
+        if (this.audioContext && this.audioContext.state === 'running') {
+            // Context is already running, no action needed
+        } else if (this.audioContext && this.audioContext.state === 'suspended') {
+            // Don't attempt resume here - it will cause warnings
+            // User interaction handler will resume when appropriate
         }
 
         try {
