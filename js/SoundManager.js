@@ -48,12 +48,8 @@ class SoundManager {
         try {
             this.audioContext = new (window.AudioContext || window.webkitAudioContext)();
 
-            // Resume context if suspended (required by modern browsers)
-            if (this.audioContext.state === 'suspended') {
-                await this.audioContext.resume();
-            }
-
-            console.log('✅ SoundManager: Audio context initialized');
+            // Don't try to resume context here - will be done on user interaction
+            console.log('✅ SoundManager: Audio context created (suspended until user interaction)');
         } catch (error) {
             console.warn('⚠️ SoundManager: Audio context not available', error);
             this.enabled = false;
@@ -172,33 +168,39 @@ class SoundManager {
 
     async play(soundName, options = {}) {
         if (!this.enabled || !this.sounds.has(soundName)) {
-            console.warn(`⚠️ SoundManager: Sound '${soundName}' not available`);
             return;
+        }
+
+        // Ensure AudioContext is resumed (required after user interaction)
+        if (this.audioContext && this.audioContext.state === 'suspended') {
+            try {
+                await this.audioContext.resume();
+            } catch (error) {
+                // Ignore - will be handled by user interaction
+            }
         }
 
         try {
             const audio = this.sounds.get(soundName);
             const actualVolume = (options.volume || 1) * this.volume;
 
-            // Clone audio for multiple simultaneous plays
-            const audioClone = audio.cloneNode();
-            audioClone.volume = actualVolume;
+            // Create a fresh Audio element instead of cloning to avoid blob URL issues
+            const audioElement = new Audio();
+            audioElement.src = audio.src;
+            audioElement.volume = actualVolume;
 
             if (options.loop !== undefined) {
-                audioClone.loop = options.loop;
+                audioElement.loop = options.loop;
             }
 
-            await audioClone.play();
-
-            // Clean up after playback
-            audioClone.addEventListener('ended', () => {
-                URL.revokeObjectURL(audioClone.src);
-            });
-
+            await audioElement.play();
             console.log(`🔊 SoundManager: Playing ${soundName}`);
-            return audioClone;
+            return audioElement;
         } catch (error) {
-            console.warn(`⚠️ SoundManager: Failed to play ${soundName}:`, error);
+            // Only log actual errors, not user interaction requirements
+            if (error.name !== 'NotAllowedError') {
+                console.warn(`⚠️ SoundManager: Failed to play ${soundName}:`, error);
+            }
         }
     }
 
@@ -265,19 +267,20 @@ class SoundManager {
 
     // Initialize sound on user interaction (required by browsers)
     async enableOnUserInteraction() {
-        const enableAudio = async () => {
-            if (this.audioContext && this.audioContext.state === 'suspended') {
-                await this.audioContext.resume();
+        const enableAudio = async (event) => {
+            try {
+                if (this.audioContext && this.audioContext.state === 'suspended') {
+                    await this.audioContext.resume();
+                }
+                console.log('✅ SoundManager: Audio enabled by user interaction');
+            } catch (error) {
+                console.warn('⚠️ SoundManager: Could not enable audio:', error);
             }
 
-            // Test play a quiet sound to enable audio
-            await this.play('notification', { volume: 0.01 });
-
+            // Remove listeners after first interaction
             document.removeEventListener('click', enableAudio);
             document.removeEventListener('touchstart', enableAudio);
             document.removeEventListener('keydown', enableAudio);
-
-            console.log('✅ SoundManager: Audio enabled by user interaction');
         };
 
         document.addEventListener('click', enableAudio, { once: true });

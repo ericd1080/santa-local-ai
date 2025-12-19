@@ -16,6 +16,25 @@
         window.addEventListener('load', function() {
             console.log('📚 All external dependencies loaded');
         });
+
+        // Suppress known development warnings for cleaner console
+        const originalWarn = console.warn;
+        console.warn = function(...args) {
+            const message = args.join(' ');
+
+            // Suppress Tailwind CSS production warning (expected in development)
+            if (message.includes('cdn.tailwindcss.com should not be used in production')) {
+                return;
+            }
+
+            // Suppress Babel transformer warning (expected in development)
+            if (message.includes('You are using the in-browser Babel transformer')) {
+                return;
+            }
+
+            // Allow all other warnings through
+            originalWarn.apply(console, args);
+        };
     </script>
     <style>
         @keyframes twinkle {
