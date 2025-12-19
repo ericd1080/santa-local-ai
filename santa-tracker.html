@@ -1845,10 +1845,13 @@
             const userMarker = useRef(null);
             const sleighAnimation = useRef(null);
             const initTimeoutRef = useRef(null);
+            const userHasInteracted = useRef(false);
 
             // Map initialization effect - only depends on visibility
             useEffect(() => {
                 if (isVisible && !mapInstance.current && mapRef.current) {
+                    // Reset interaction flag when opening map
+                    userHasInteracted.current = false;
                     console.log('🗺️ Starting Santa map initialization...');
 
                     // Delay initialization to ensure DOM is fully rendered
@@ -2106,12 +2109,14 @@
                     });
                 }
 
-                // Adjust view to show both markers
-                if (userLocation && santaStats.distance !== undefined) {
-                    const group = L.featureGroup([santaMarker.current, userMarker.current]);
-                    map.fitBounds(group.getBounds().pad(0.1));
-                } else {
-                    map.setView([santaStats.santaLat, santaStats.santaLon], 4);
+                // Only adjust view automatically if user hasn't manually interacted
+                if (!userHasInteracted.current) {
+                    if (userLocation && santaStats.distance !== undefined) {
+                        const group = L.featureGroup([santaMarker.current, userMarker.current]);
+                        map.fitBounds(group.getBounds().pad(0.1));
+                    } else {
+                        map.setView([santaStats.santaLat, santaStats.santaLon], 4);
+                    }
                 }
             };
 
@@ -2218,6 +2223,7 @@
                                 className="map-control-btn"
                                 onClick={() => {
                                     if (mapInstance.current && santaStats) {
+                                        userHasInteracted.current = true;
                                         mapInstance.current.setView([santaStats.santaLat, santaStats.santaLon], 6);
                                     }
                                 }}
@@ -2230,6 +2236,7 @@
                                     className="map-control-btn"
                                     onClick={() => {
                                         if (mapInstance.current) {
+                                            userHasInteracted.current = true;
                                             mapInstance.current.setView([userLocation.lat, userLocation.lon], 8);
                                         }
                                     }}
