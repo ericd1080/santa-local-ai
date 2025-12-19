@@ -2462,25 +2462,40 @@ ${context}
                         : "http://localhost:11434";
 
                     // Make API request through server proxy
+                    const requestData = {
+                        model: aiConfig.model,
+                        prompt: prompt,
+                        stream: false,
+                        options: aiConfig.options
+                    };
+
+                    console.log('🚀 Making AI request:', {
+                        model: requestData.model,
+                        prompt: requestData.prompt?.substring(0, 100) + '...',
+                        options: requestData.options
+                    });
+
                     const response = await fetch("/api/generate", {
                         method: "POST",
                         headers: {
                             "Content-Type": "application/json",
                         },
-                        body: JSON.stringify({
-                            model: aiConfig.model,
-                            prompt: prompt,
-                            stream: false,
-                            options: aiConfig.options
-                        })
+                        body: JSON.stringify(requestData)
                     });
 
+                    console.log('📥 Response status:', response.status, response.statusText);
+
                     if (!response.ok) {
-                        throw new Error(`API error: ${response.status} ${response.statusText}`);
+                        const errorText = await response.text();
+                        console.error('❌ API error response:', errorText);
+                        throw new Error(`API error: ${response.status} ${response.statusText} - ${errorText}`);
                     }
 
                     const data = await response.json();
+                    console.log('📦 Response data:', data);
                     let message = data.response || '';
+
+                    console.log('📝 Extracted message:', message);
 
                     // Korean language purity validation
                     if (currentLanguage === 'ko') {
