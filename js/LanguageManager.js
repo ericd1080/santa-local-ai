@@ -92,6 +92,10 @@ class LanguageManager {
             'config.fixed': 'FIXED!',
 
             // Model Descriptions
+            'model.llama3:latest.description': 'Preferred model - balanced performance and efficiency',
+            'model.phi4:latest.description': 'Microsoft\'s latest compact model',
+            'model.qwen3:latest.description': 'Excellent for Korean language support',
+            'model.gemma3:latest.description': 'Great for Korean language support',
             'model.llama3.2.description': 'Fast and efficient for Santa messages',
             'model.mistral7b.description': 'Creative storytelling model',
             'model.phi3.description': 'Compact and fast model',
@@ -330,6 +334,10 @@ class LanguageManager {
             'config.fixed': '수정됨!',
 
             // Model Descriptions
+            'model.llama3:latest.description': '권장 모델 - 균형잡힌 성능과 효율성',
+            'model.phi4:latest.description': 'Microsoft의 최신 컴팩트 모델',
+            'model.qwen3:latest.description': '한국어 지원이 뛰어난 모델',
+            'model.gemma3:latest.description': '한국어 지원이 우수한 모델',
             'model.llama3.2.description': '산타 메시지를 위한 빠르고 효율적인 모델',
             'model.mistral7b.description': '창의적인 스토리텔링 모델',
             'model.phi3.description': '컴팩트하고 빠른 모델',

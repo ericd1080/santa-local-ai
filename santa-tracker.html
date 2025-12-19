@@ -2085,7 +2085,7 @@
                                     top_k: 20,           // Limited vocabulary
                                     repeat_penalty: 1.3, // Higher repetition penalty
                                     num_predict: 80,     // Moderate length to prevent truncation
-                                    stop: ["です", "だ", "ます", "する", "たち", "という", "クリス", "マス", "喜び", "tất cả", "của", "những", "và", "happiness", "joy", "wonderful", "children", "magic", "magical", "people", "beautiful", "amazing", "special", "perfect", "ingly", "ness", "tion", "ly", "ing", "的", "了", "和", "在", "们", "會", "会", "都", "也", "orden", "amor", "feliz", "navidad", "ครับ", "ค่ะ", "และ", "ที่", "и", "в", "na", "с"] // Stop on all foreign words
+                                    stop: ["です", "だ", "ます", "たち", "クリス", "マス", "喜び", "tất cả", "của", "happiness", "joy", "wonderful", "children", "magical", "people", "ingly", "ness", "的", "了", "们", "orden", "amor", "feliz", "что", "как"] // Stop on very specific foreign words only
                                 }
                             };
                         } else {
@@ -2372,63 +2372,27 @@
                 });
             };
 
-            // Korean language purity validation function
+            // Simplified Korean language purity validation function (85% Hangeul rule)
             const validateKoreanPurity = (message) => {
-                // Check for common foreign language contamination patterns
-                const foreignPatterns = [
-                    // Japanese contamination (hiragana, katakana, kanji)
-                    /です/g, /だ/g, /である/g, /たち/g, /ます/g, /する/g,
-                    /という/g, /から/g, /まで/g, /について/g, /として/g,
-                    /[\u3040-\u309F]/g,  // Hiragana range
-                    /[\u30A0-\u30FF]/g,  // Katakana range (クリスマス etc)
-                    /[\u4E00-\u9FAF]/g,  // Kanji range (喜び etc)
-                    /[가-힣]です/gi, /[가-힣]だ/gi, /[가-힣]ます/gi,
+                console.log('🔍 Checking Korean purity for message:', message.trim());
 
-                    // Vietnamese contamination
-                    /tất cả/gi, /của/gi, /những/gi, /và/gi, /cho/gi,
-                    /với/gi, /để/gi, /được/gi, /có/gi, /là/gi,
+                // Count total characters (excluding spaces and punctuation)
+                const totalChars = message.replace(/[\s\p{P}\p{So}0-9]/gu, '').length;
 
-                    // English contamination
-                    /happiness/gi, /joy/gi, /wonderful/gi, /magic/gi, /magical/gi,
-                    /children/gi, /child/gi, /people/gi, /everyone/gi, /somebody/gi,
-                    /beautiful/gi, /amazing/gi, /fantastic/gi, /incredible/gi,
-                    /special/gi, /perfect/gi, /awesome/gi, /excellent/gi,
+                // Count Hangeul characters (Korean alphabet)
+                const hangeulChars = (message.match(/[가-힣]/g) || []).length;
 
-                    // English suffix contamination
-                    /ingly$/gi, /ness$/gi, /tion$/gi, /ly$/gi, /ing$/gi,
-                    /[가-힣]+ingly/gi, /[가-힣]+ness/gi, /[가-힣]+ly$/gi,
-                    /[가-힣]+ing$/gi, /[가-힣]+tion/gi,
+                // Calculate purity percentage
+                const purityPercentage = totalChars > 0 ? (hangeulChars / totalChars) * 100 : 0;
 
-                    // Mixed language combinations
-                    /[가-힣]+です/gi, /[가-힣]+だ/gi, /[가-힣]+ます/gi,
-                    /[가-힣]+tất cả/gi, /[가-힣]+của/gi,
-                    /오래ingly/gi, /정말ly/gi, /아주ness/gi,
+                console.log(`📊 Korean purity analysis: ${hangeulChars}/${totalChars} characters = ${purityPercentage.toFixed(1)}%`);
 
-                    // Chinese contamination
-                    /的/g, /了/g, /和/g, /在/g, /是/g, /有/g, /我/g, /你/g, /他/g,
-                    /们/g, /會/g, /会/g, /都/g, /也/g, /就/g, /说/g, /来/g, /去/g,
-                    /[가-힣]们/gi, /[가-힣]的/gi, /[가-힣]了/gi,
+                if (purityPercentage >= 85) {
+                    console.log('✅ Korean purity validation passed (≥85% Hangeul)');
+                    return message;
+                } else {
+                    console.log(`❌ Korean purity validation failed (${purityPercentage.toFixed(1)}% < 85% Hangeul)`);
 
-                    // Spanish contamination
-                    /orden/gi, /amor/gi, /feliz/gi, /navidad/gi, /regalo/gi, /niños/gi,
-                    /familia/gi, /alegria/gi, /esperanza/gi, /paz/gi, /corazón/gi,
-
-                    // Thai contamination
-                    /ครับ/g, /ค่ะ/g, /และ/g, /ที่/g, /เป็น/g, /มี/g,
-
-                    // Russian contamination
-                    /и/g, /в/g, /на/g, /с/g, /что/g, /как/g, /для/g,
-                ];
-
-                let hasContamination = false;
-                foreignPatterns.forEach(pattern => {
-                    if (pattern.test(message)) {
-                        hasContamination = true;
-                        console.warn(`🚨 Korean contamination detected: ${pattern}`, message);
-                    }
-                });
-
-                if (hasContamination) {
                     // Return a safe, pure Korean fallback message
                     const fallbackMessages = [
                         "호호호! 북극에서 크리스마스 준비가 한창입니다. 엘프들과 순록들이 모두 바쁘게 움직이고 있어요! 🎅",
@@ -2439,11 +2403,9 @@
                         "호호호! 루돌프와 순록 친구들도 모두 준비됐어요! 크리스마스 밤이 정말 기대됩니다! 🛷"
                     ];
                     const randomIndex = Math.floor(Math.random() * fallbackMessages.length);
-                    console.log('✅ Using pure Korean fallback message due to foreign language contamination detected');
+                    console.log(`✅ Using pure Korean fallback message (100% Hangeul purity)`);
                     return fallbackMessages[randomIndex];
                 }
-
-                return message;
             };
 
             const getSantaMessage = async () => {
@@ -2475,18 +2437,22 @@
                             num_predict: 150
                         };
 
-                        // Korean-specific AI configuration for better language purity
+                        // Korean-specific AI configuration with optimized models
                         if (currentLanguage === 'ko') {
+                            // Use Korean-optimized models for better language support
+                            const koreanModels = ['gemma3:latest', 'qwen3:latest'];
+                            const currentModel = window.configManager.get('aiProvider.defaultModel');
+                            const preferredModel = koreanModels.includes(currentModel) ? currentModel : 'gemma3:latest';
+
                             aiConfig = {
-                                model: window.configManager.get('aiProvider.defaultModel'),
+                                model: preferredModel,
                                 options: {
                                     ...baseOptions,
-                                    temperature: 0.1,    // ULTRA low temperature for Korean consistency
-                                    top_p: 0.6,         // Very focused sampling
-                                    top_k: 20,          // Limit vocabulary choices
-                                    repeat_penalty: 1.3, // Higher repetition penalty
-                                    num_predict: 120,    // Longer responses to prevent truncation
-                                    stop: ["です", "だ", "ます", "する", "たち", "という", "クリス", "マス", "喜び", "tất cả", "của", "những", "và", "happiness", "joy", "wonderful", "children", "magic", "magical", "people", "beautiful", "amazing", "special", "perfect", "ingly", "ness", "tion", "ly", "ing", "的", "了", "和", "在", "们", "會", "会", "都", "也", "orden", "amor", "feliz", "navidad", "ครับ", "ค่ะ", "และ", "ที่", "и", "в", "na", "с"] // Stop on all foreign words
+                                    temperature: 0.7,    // Balanced temperature for Korean consistency
+                                    top_p: 0.8,         // Focused sampling
+                                    top_k: 30,          // Reasonable vocabulary choices
+                                    repeat_penalty: 1.2, // Moderate repetition penalty
+                                    num_predict: 150     // Standard response length
                                 }
                             };
                         } else {
@@ -2557,20 +2523,20 @@
 
                         // Korean-specific AI configuration for fallback
                         if (currentLanguage === 'ko') {
+                            // Use Korean-optimized models for fallback too
                             aiConfig = {
-                                model: "llama3.2",
+                                model: "gemma3:latest",
                                 options: {
-                                    temperature: 0.1,    // ULTRA low temperature
-                                    top_p: 0.6,         // Very focused sampling
-                                    top_k: 20,          // Limit vocabulary choices
-                                    repeat_penalty: 1.3, // Higher repetition penalty
-                                    num_predict: 120,    // Longer responses to prevent truncation
-                                    stop: ["です", "だ", "ます", "する", "たち", "という", "クリス", "マス", "喜び", "tất cả", "của", "những", "và", "happiness", "joy", "wonderful", "children", "magic", "magical", "people", "beautiful", "amazing", "special", "perfect", "ingly", "ness", "tion", "ly", "ing", "的", "了", "和", "在", "们", "會", "会", "都", "也", "orden", "amor", "feliz", "navidad", "ครับ", "ค่ะ", "และ", "ที่", "и", "в", "na", "с"] // Stop on all foreign words
+                                    temperature: 0.7,    // Balanced temperature
+                                    top_p: 0.8,         // Focused sampling
+                                    top_k: 30,          // Reasonable vocabulary choices
+                                    repeat_penalty: 1.2, // Moderate repetition penalty
+                                    num_predict: 150     // Standard response length
                                 }
                             };
                         } else {
                             aiConfig = {
-                                model: "llama3.2",
+                                model: "llama3:latest",
                                 options: {
                                     temperature: 0.8,
                                     num_predict: 150
@@ -2607,7 +2573,17 @@
 
                     // Korean language purity validation
                     if (currentLanguage === 'ko') {
-                        message = validateKoreanPurity(message.trim());
+                        console.log('🔍 Raw AI message before validation:', message.trim());
+
+                        // Temporary: Allow bypass for debugging (remove after testing)
+                        const debugMode = window.location.hash.includes('debug');
+                        if (debugMode) {
+                            console.log('🚧 DEBUG MODE: Skipping validation, using raw AI message');
+                        } else {
+                            message = validateKoreanPurity(message.trim());
+                        }
+
+                        console.log('✨ Final message after validation:', message);
                     }
 
                     setSantaMessage(message);
@@ -3209,6 +3185,15 @@
 
         try {
             console.log('🎅 Starting Santa Tracker Enhanced...');
+
+            // Debug mode instructions
+            if (window.location.hash.includes('debug')) {
+                console.log('🚧 DEBUG MODE ACTIVE: Korean validation bypassed');
+                console.log('💡 To disable debug mode, remove #debug from URL');
+            } else {
+                console.log('💡 To enable debug mode (bypass Korean validation), add #debug to URL');
+            }
+
             const root = ReactDOM.createRoot(document.getElementById('root'));
             root.render(<SantaTrackerEnhanced />);
             console.log('✅ Santa Tracker Enhanced mounted successfully!');
