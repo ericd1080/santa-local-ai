@@ -134,8 +134,8 @@ class SoundManager {
     }
 
     createHoHoHoSound() {
-        // Deep rhythmic "Ho Ho Ho" pattern
-        return this.createLaughSound([150, 120, 150], 0.6, 1.2);
+        // Deep rhythmic "Ho Ho Ho" pattern - higher frequencies for audibility
+        return this.createLaughSound([200, 250, 200], 0.7, 1.5);
     }
 
     createJingleBellsSound() {
@@ -151,8 +151,8 @@ class SoundManager {
     }
 
     createGiftDropSound() {
-        // Magical descending "whoosh" sound
-        return this.createSwooshSound(600, 200, 0.3, 0.6);
+        // Magical descending "whoosh" sound - more audible
+        return this.createSwooshSound(800, 300, 0.5, 0.8);
     }
 
     createNotificationSound() {
@@ -198,16 +198,20 @@ class SoundManager {
             let sample = 0;
             const t = i / sampleRate;
 
-            // Create "Ho Ho Ho" rhythm pattern
-            const hoPattern = Math.floor(t * 3) % 1; // 3 "ho"s per second
-            const hoEnvelope = hoPattern < 0.3 ? Math.sin(Math.PI * hoPattern / 0.3) : 0;
+            // Create "Ho Ho Ho" rhythm pattern - FIXED BUG!
+            const hoPattern = (t * 2.5) % 1; // 2.5 "ho"s per second (was Math.floor which made it always 0!)
+            const hoEnvelope = hoPattern < 0.4 ? Math.sin(Math.PI * hoPattern / 0.4) * Math.sin(Math.PI * hoPattern / 0.4) : 0.1;
 
             for (const freq of frequencies) {
-                const wobble = 1 + 0.1 * Math.sin(2 * Math.PI * 5 * t); // Voice wobble
+                const wobble = 1 + 0.15 * Math.sin(2 * Math.PI * 8 * t); // Stronger voice wobble
                 sample += Math.sin(2 * Math.PI * freq * wobble * t) * hoEnvelope;
+                // Add harmonics for richer sound
+                sample += Math.sin(2 * Math.PI * freq * 2 * wobble * t) * hoEnvelope * 0.3;
             }
 
-            buffer[i] = (sample / frequencies.length) * volume;
+            // Overall envelope to fade in/out
+            const overallEnvelope = Math.sin(Math.PI * t / duration);
+            buffer[i] = (sample / frequencies.length) * volume * overallEnvelope;
         }
 
         return this.floatArrayToDataURL(buffer, sampleRate);
@@ -250,17 +254,21 @@ class SoundManager {
             const t = i / sampleRate;
             const progress = t / duration;
 
-            // Frequency sweeps down
-            const freq = startFreq + (endFreq - startFreq) * progress;
+            // Frequency sweeps down (exponential for more natural sound)
+            const freq = startFreq * Math.pow(endFreq / startFreq, progress);
 
-            // Add some noise for "whoosh" effect
-            const noise = (Math.random() - 0.5) * 0.2;
-            const tone = Math.sin(2 * Math.PI * freq * t);
+            // Create layered swoosh sound
+            const tone1 = Math.sin(2 * Math.PI * freq * t);
+            const tone2 = Math.sin(2 * Math.PI * freq * 1.5 * t) * 0.6; // Harmonic
+            const tone3 = Math.sin(2 * Math.PI * freq * 0.7 * t) * 0.4; // Sub-harmonic
 
-            // Envelope that starts strong and fades
-            const envelope = Math.exp(-progress * 3);
+            // Add some filtered noise for "whoosh" effect
+            const noise = (Math.random() - 0.5) * 0.15 * (1 - progress); // Less noise as it fades
 
-            buffer[i] = (tone + noise) * volume * envelope;
+            // Better envelope - starts strong, swooshes down
+            const envelope = Math.exp(-progress * 2) * (0.8 + 0.2 * Math.sin(Math.PI * progress));
+
+            buffer[i] = (tone1 + tone2 + tone3 + noise) * volume * envelope;
         }
 
         return this.floatArrayToDataURL(buffer, sampleRate);
