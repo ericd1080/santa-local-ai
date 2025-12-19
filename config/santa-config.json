@@ -32,7 +32,7 @@
         "description": "Excellent for Korean language support (uses thinking mechanism)",
         "parameters": {
           "temperature": 0.8,
-          "num_predict": 300,
+          "num_predict": 500,
           "top_p": 0.9,
           "top_k": 50,
           "repeat_penalty": 1.1
