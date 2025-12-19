@@ -64,25 +64,62 @@ class SantaTrackerSBC:
         with open(CONFIG_FILE, 'w') as f:
             json.dump(config, f, indent=2)
 
-    def load_family_data(self):
-        """Load family database for personalized Santa responses"""
+    def load_family_data(self, language='en'):
+        """Load family database for personalized Santa responses with language support"""
         try:
-            if FAMILY_DB_FILE.exists():
-                with open(FAMILY_DB_FILE, 'r') as f:
+            # Determine which family file to load based on language
+            if language == 'ko':
+                family_file = Path(__file__).parent / "family-korean.json"
+                fallback_file = FAMILY_DB_FILE
+                print(f"🇰🇷 Loading Korean family database...")
+            else:
+                family_file = FAMILY_DB_FILE
+                fallback_file = None
+                print(f"🌍 Loading default family database...")
+
+            # Try to load the language-specific file
+            if family_file.exists():
+                with open(family_file, 'r', encoding='utf-8') as f:
                     data = json.load(f)
-                    print(f"🎄 Family database loaded successfully! Family: {data.get('family', {}).get('lastName', 'Unknown')}")
+                    family_name = data.get('family', {}).get('lastName', 'Unknown')
+                    lang_indicator = "🇰🇷 한국어" if language == 'ko' else "🌍 English"
+                    print(f"🎄 Family database loaded successfully! Family: {family_name} ({lang_indicator})")
+                    return data
+            elif fallback_file and fallback_file.exists():
+                # Korean requested but no Korean file, try fallback
+                print(f"⚠️  Korean family database not found, using English fallback")
+                with open(fallback_file, 'r', encoding='utf-8') as f:
+                    data = json.load(f)
+                    print(f"🎄 Fallback family database loaded! Family: {data.get('family', {}).get('lastName', 'Unknown')}")
                     return data
             else:
-                print("⚠️  family.json not found - using generic responses")
+                print("⚠️  No family database found - using generic responses")
                 return {}
         except Exception as e:
             print(f"❌ Failed to load family database: {e}")
             return {}
 
-    def reload_family_data(self):
+    def reload_family_data(self, language='en'):
         """Reload family data (for real-time updates)"""
-        self.family_data = self.load_family_data()
+        self.family_data = self.load_family_data(language)
         return self.family_data
+
+    def detect_language_from_request(self, request):
+        """Detect language from request headers or parameters"""
+        # Try to get language from request parameters
+        language = request.json.get('language') if request.is_json else None
+
+        # If not found, try request args
+        if not language:
+            language = request.args.get('language', 'en')
+
+        # Try Accept-Language header as fallback
+        if not language or language == 'en':
+            accept_lang = request.headers.get('Accept-Language', '')
+            if 'ko' in accept_lang:
+                language = 'ko'
+
+        return language or 'en'
 
     def create_family_context(self):
         """Create personalized context from family database"""
@@ -228,14 +265,14 @@ class SantaTrackerSBC:
         except Exception as e:
             return {"valid": False, "error": f"API validation error: {str(e)}"}
 
-    def generate_santa_message(self, prompt_type="delivering", context=None):
+    def generate_santa_message(self, prompt_type="delivering", context=None, language='en'):
         """Generate Santa message using Groq API with family context injection"""
         if not GROQ_API_KEY:
             return {"error": "Groq API key not configured", "suggestion": "Set GROQ_API_KEY in .env file"}
 
         try:
-            # Reload family data for real-time updates
-            self.reload_family_data()
+            # Reload family data for real-time updates with correct language
+            self.reload_family_data(language)
 
             # Create personalized family context
             family_context = self.create_family_context()
@@ -424,11 +461,16 @@ def get_family_data():
 def reload_family_data():
     """Reload family database from file (Emergency IT Parent Override!)"""
     try:
-        family_data = santa_sbc.reload_family_data()
+        # Get language from request for proper family database selection
+        language = santa_sbc.detect_language_from_request(request)
+        family_data = santa_sbc.reload_family_data(language)
+
+        lang_indicator = "🇰🇷 한국어" if language == 'ko' else "🌍 English"
         return jsonify({
             "status": "reloaded",
             "hasData": bool(family_data),
-            "message": "Family database reloaded successfully! 🎄"
+            "language": language,
+            "message": f"Family database reloaded successfully! {lang_indicator} 🎄"
         })
     except Exception as e:
         return jsonify({"error": str(e)}), 500
@@ -441,8 +483,12 @@ def generate_message():
         prompt_type = data.get('prompt_type', 'delivering')
         context = data.get('context', {})
 
-        # Generate message using Groq API
-        result = santa_sbc.generate_santa_message(prompt_type, context)
+        # Detect language for family database selection
+        language = santa_sbc.detect_language_from_request(request)
+        print(f"🌐 API request language: {language}")
+
+        # Generate message using Groq API with language-specific family data
+        result = santa_sbc.generate_santa_message(prompt_type, context, language)
 
         return jsonify(result)
 

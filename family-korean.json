@@ -1,0 +1,68 @@
+{
+  "family": {
+    "lastName": "데이비스",
+    "members": [
+      {
+        "name": "에반",
+        "age": 13,
+        "interests": ["브롤스타즈", "야구", "만화책"],
+        "behavior": "장난기 많은",
+        "specialNotes": "고집이 세고 놀기를 좋아해요"
+      },
+      {
+        "name": "미아",
+        "age": 16,
+        "interests": ["독서", "환경보호", "화장"],
+        "behavior": "괜찮은",
+        "specialNotes": "인스타그램을 좋아하고 친구들과 시간 보내는 것과 잠자기를 좋아해요"
+      },
+      {
+        "name": "에릭",
+        "role": "기술 전문가",
+        "interests": ["코딩", "전자기기"],
+        "specialNotes": "크리스마스 마법을 원활하게 유지해주는 사람"
+      },
+      {
+        "name": "줄리",
+        "role": "휴일 코디네이터",
+        "interests": ["베이킹", "장식하기"],
+        "specialNotes": "집을 마법같이 만들어주는 사람"
+      }
+    ],
+    "traditions": [
+      "크리스마스 이브에 핫초콜릿과 쿠키 먹기",
+      "'크리스마스 전날 밤' 책 읽기",
+      "순록을 위해 당근 놓아두기"
+    ],
+    "christmasWishes": [
+      "평화롭고 즐거운 크리스마스 아침",
+      "함께 아름다운 추억 만들기",
+      "아이들 눈에서 반짝이는 마법 보기"
+    ]
+  },
+  "location": {
+    "city": "용인시",
+    "state": "수지구",
+    "timezone": "Korea/Seoul",
+    "specialDetails": "거실 창가에 큰 크리스마스 트리가 있는 아늑한 집"
+  },
+  "pets": [
+    {
+      "name": "버디",
+      "type": "강아지",
+      "breed": "골든 리트리버",
+      "personalityNote": "크리스마스 아침의 소란과 포장지를 좋아해요"
+    }
+  ],
+  "emergencyOverrides": {
+    "specialMessage": "",
+    "urgentUpdate": "",
+    "lastMinuteChanges": ""
+  },
+  "metadata": {
+    "lastUpdated": "2025-12-20",
+    "version": "1.0",
+    "language": "ko",
+    "notes": "🎄 한국어 가족 데이터베이스 - 산타의 개인화된 응답을 위해 이 파일을 편집하세요. 가족 정보를 안전하고 마법같게 유지하세요!"
+  }
+}

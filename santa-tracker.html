@@ -2233,7 +2233,9 @@
             // Initialize configuration system
             useEffect(() => {
                 initializeConfiguration();
-                loadFamilyData();
+                // Load family data with current language
+                const currentLang = window.languageManager?.getCurrentLanguage() || 'en';
+                loadFamilyData(currentLang);
             }, []);
 
             // Time updates
@@ -2273,6 +2275,10 @@
                 // Listen for language changes
                 const handleLanguageChange = (data) => {
                     setCurrentLanguage(data.to);
+
+                    // 🌐 Reload family data when language changes
+                    console.log(`🌐 Language changed to: ${data.to}`);
+                    loadFamilyData(data.to);
                 };
 
                 window.languageManager.addEventListener('language-changed', handleLanguageChange);
@@ -2880,30 +2886,67 @@
                 }
             };
 
-            const loadFamilyData = async () => {
+            const loadFamilyData = async (language = 'en') => {
                 try {
-                    const response = await fetch('./family.json');
+                    // Determine which family file to load based on language
+                    let familyFile, fallbackFile, langIndicator;
+                    if (language === 'ko') {
+                        familyFile = './family-korean.json';
+                        fallbackFile = './family.json';
+                        langIndicator = '🇰🇷 한국어';
+                        console.log('🇰🇷 Loading Korean family database...');
+                    } else {
+                        familyFile = './family.json';
+                        fallbackFile = null;
+                        langIndicator = '🌍 English';
+                        console.log('🌍 Loading default family database...');
+                    }
+
+                    // Try to load the language-specific file
+                    let response = await fetch(familyFile);
+                    let data = null;
+
                     if (response.ok) {
-                        const data = await response.json();
+                        data = await response.json();
                         const familyInfo = {
                             hasData: true,
                             familyName: data.family?.lastName || 'Unknown',
                             memberCount: data.family?.members?.length || 0,
                             location: data.location?.city || 'Unknown',
                             contextPreview: createFamilyContext(data).substring(0, 100) + '...',
-                            fullData: data
+                            fullData: data,
+                            language: language
                         };
                         setFamilyData(familyInfo);
-                        console.log('🏠 Family database loaded:', familyInfo.familyName);
+                        console.log(`🏠 Family database loaded: ${familyInfo.familyName} (${langIndicator})`);
                         return data;
-                    } else {
-                        console.log('📄 No family.json found - using generic responses');
-                        setFamilyData({ hasData: false });
-                        return null;
+                    } else if (fallbackFile) {
+                        // Korean requested but no Korean file, try fallback
+                        console.log('⚠️ Korean family database not found, trying English fallback...');
+                        response = await fetch(fallbackFile);
+                        if (response.ok) {
+                            data = await response.json();
+                            const familyInfo = {
+                                hasData: true,
+                                familyName: data.family?.lastName || 'Unknown',
+                                memberCount: data.family?.members?.length || 0,
+                                location: data.location?.city || 'Unknown',
+                                contextPreview: createFamilyContext(data).substring(0, 100) + '...',
+                                fullData: data,
+                                language: 'en' // fallback language
+                            };
+                            setFamilyData(familyInfo);
+                            console.log(`🏠 Fallback family database loaded: ${familyInfo.familyName} (🌍 English)`);
+                            return data;
+                        }
                     }
+
+                    console.log('📄 No family database found - using generic responses');
+                    setFamilyData({ hasData: false, language: language });
+                    return null;
                 } catch (error) {
                     console.warn('⚠️ Failed to load family database:', error);
-                    setFamilyData({ hasData: false });
+                    setFamilyData({ hasData: false, language: language });
                     return null;
                 }
             };

@@ -121,29 +121,6 @@
                 this.baseUrl = window.location.origin;
             }
 
-            async generateMessage(promptType = 'delivering', context = {}) {
-                try {
-                    const response = await fetch(`${this.baseUrl}/api/generate`, {
-                        method: 'POST',
-                        headers: { 'Content-Type': 'application/json' },
-                        body: JSON.stringify({
-                            prompt_type: promptType,
-                            context: context
-                        })
-                    });
-
-                    const data = await response.json();
-
-                    if (!response.ok) {
-                        throw new Error(data.error || `HTTP ${response.status}`);
-                    }
-
-                    return data;
-                } catch (error) {
-                    console.error('SBC API Error:', error);
-                    throw error;
-                }
-            }
 
             async getStatus() {
                 try {
@@ -179,9 +156,9 @@
                 }
             }
 
-            async getFamilyData() {
+            async getFamilyData(language = 'en') {
                 try {
-                    const response = await fetch(`${this.baseUrl}/api/family`);
+                    const response = await fetch(`${this.baseUrl}/api/family?language=${language}`);
                     return await response.json();
                 } catch (error) {
                     console.error('Failed to get family data:', error);
@@ -189,14 +166,41 @@
                 }
             }
 
-            async reloadFamilyData() {
+            async reloadFamilyData(language = 'en') {
                 try {
                     const response = await fetch(`${this.baseUrl}/api/family/reload`, {
-                        method: 'POST'
+                        method: 'POST',
+                        headers: { 'Content-Type': 'application/json' },
+                        body: JSON.stringify({ language: language })
                     });
                     return await response.json();
                 } catch (error) {
                     console.error('Failed to reload family data:', error);
+                    throw error;
+                }
+            }
+
+            async generateMessage(promptType = 'delivering', context = {}, language = 'en') {
+                try {
+                    const response = await fetch(`${this.baseUrl}/api/generate`, {
+                        method: 'POST',
+                        headers: { 'Content-Type': 'application/json' },
+                        body: JSON.stringify({
+                            prompt_type: promptType,
+                            context: context,
+                            language: language
+                        })
+                    });
+
+                    const data = await response.json();
+
+                    if (!response.ok) {
+                        throw new Error(data.error || `HTTP ${response.status}`);
+                    }
+
+                    return data;
+                } catch (error) {
+                    console.error('SBC API Error:', error);
                     throw error;
                 }
             }
@@ -384,6 +388,7 @@
             const [familyData, setFamilyData] = useState({ hasData: false });
             const [largeText, setLargeText] = useState(true); // Default to large text for iPad
             const [showSantaMap, setShowSantaMap] = useState(false);
+            const [currentLanguage, setCurrentLanguage] = useState('en');
 
             // Initialize
             useEffect(() => {
@@ -420,9 +425,10 @@
                 }
             };
 
-            const loadFamilyData = async () => {
+            const loadFamilyData = async (language = 'en') => {
                 try {
-                    const data = await apiClient.getFamilyData();
+                    // For SBC version, we need to pass language to the API
+                    const data = await apiClient.getFamilyData(language);
                     setFamilyData(data);
                 } catch (error) {
                     console.error('Failed to load family data:', error);
@@ -451,11 +457,14 @@
                         gifts: santaLocation.progress ? `${santaLocation.progress}% of deliveries completed.` : ''
                     };
 
-                    const response = await apiClient.generateMessage(santaLocation.phase, context);
+                    const response = await apiClient.generateMessage(santaLocation.phase, context, currentLanguage);
 
                     if (response.error) {
                         setError(response.error);
-                        setSantaMessage('Ho ho ho! Something went wrong, but Christmas magic will prevail! 🎅');
+                        const fallbackMessage = currentLanguage === 'ko' ?
+                            '호호호! 뭔가 잘못되었지만 크리스마스 마법이 이겨낼 거예요! 🎅' :
+                            'Ho ho ho! Something went wrong, but Christmas magic will prevail! 🎅';
+                        setSantaMessage(fallbackMessage);
                     } else {
                         setSantaMessage(response.response);
                     }
@@ -541,6 +550,16 @@
                                 className="bg-purple-600 hover:bg-purple-700 text-white px-4 py-2 rounded-lg text-sm"
                             >
                                 📱 {largeText ? 'Small Text' : 'Large Text'}
+                            </button>
+                            <button
+                                onClick={() => {
+                                    const newLang = currentLanguage === 'ko' ? 'en' : 'ko';
+                                    setCurrentLanguage(newLang);
+                                    loadFamilyData(newLang);
+                                }}
+                                className="bg-indigo-600 hover:bg-indigo-700 text-white px-4 py-2 rounded-lg text-sm"
+                            >
+                                🌐 {currentLanguage === 'ko' ? '한국어' : 'English'}
                             </button>
                             {familyData.hasData && (
                                 <button

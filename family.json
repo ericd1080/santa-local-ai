@@ -1,29 +1,29 @@
 {
   "family": {
-    "lastName": "Your Family Name",
+    "lastName": "Davis",
     "members": [
       {
-        "name": "Child 1",
-        "age": 8,
-        "interests": ["LEGO", "dinosaurs", "books"],
-        "behavior": "very good",
-        "specialNotes": "loves building and creating things"
+        "name": "Evan",
+        "age": 13,
+        "interests": ["Brawl Stars", "baseball", "comic books"],
+        "behavior": "bad",
+        "specialNotes": "loves being stubborn and playing"
       },
       {
-        "name": "Child 2",
-        "age": 5,
-        "interests": ["art", "unicorns", "singing"],
-        "behavior": "excellent",
-        "specialNotes": "always shares with others"
+        "name": "Mia",
+        "age": 16,
+        "interests": ["books", "the environment", "makeup"],
+        "behavior": "okay",
+        "specialNotes": "loves Instagram, hanging with friends, and sleeping"
       },
       {
-        "name": "Parent 1",
+        "name": "Eric",
         "role": "tech guru",
         "interests": ["coding", "gadgets"],
         "specialNotes": "keeps the Christmas magic running smoothly"
       },
       {
-        "name": "Parent 2",
+        "name": "Julie",
         "role": "holiday coordinator",
         "interests": ["baking", "decorating"],
         "specialNotes": "makes the house feel magical"
@@ -41,26 +41,18 @@
     ]
   },
   "location": {
-    "city": "Your City",
-    "state": "Your State",
-    "timezone": "America/New_York",
-    "specialDetails": "cozy house with a big Christmas tree in the living room window"
+    "city": "Yongin-si",
+    "state": "Suji-gu",
+    "timezone": "Korea/Seoul",
+    "specialDetails": "cozy house with a big Christmas tree in the living room"
   },
-  "pets": [
-    {
-      "name": "Buddy",
-      "type": "dog",
-      "breed": "Golden Retriever",
-      "personalityNote": "loves Christmas morning chaos and wrapping paper"
-    }
-  ],
   "emergencyOverrides": {
     "specialMessage": "",
     "urgentUpdate": "",
     "lastMinuteChanges": ""
   },
   "metadata": {
-    "lastUpdated": "2024-12-20",
+    "lastUpdated": "2025-12-20",
     "version": "1.0",
     "notes": "🎄 Edit this file to personalize Santa's responses. Keep family details private and magical!"
   }
