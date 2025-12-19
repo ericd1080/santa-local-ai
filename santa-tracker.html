@@ -10,6 +10,13 @@
     <script src="https://unpkg.com/@babel/standalone/babel.min.js"></script>
     <script src="https://cdn.tailwindcss.com"></script>
     <script src="https://unpkg.com/lucide@latest/dist/umd/lucide.js"></script>
+    <!-- Leaflet CSS and JS for interactive maps -->
+    <link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css"
+        integrity="sha256-p4NxAoJBhIIN+hmNHrzRCf9tD/miZyoHS5obTRR9BMY="
+        crossorigin=""/>
+    <script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"
+        integrity="sha256-20nQCchB9co0qIjJZRGuk2/Z9VM+kNiyxNV1lvTlZBo="
+        crossorigin=""></script>
     <!-- Ensure all CDN dependencies are loaded before modules -->
     <script>
         // Wait for all external dependencies to load
@@ -142,6 +149,272 @@
             animation: giftDrop 5s cubic-bezier(0.25, 0.46, 0.45, 0.94) forwards;
             font-size: 2.5rem;
             filter: drop-shadow(0 6px 12px rgba(255,215,0,0.4));
+        }
+
+        .gift-drop.user-targeted {
+            animation: giftDrop 5s cubic-bezier(0.25, 0.46, 0.45, 0.94) forwards;
+            font-size: 2.2rem;
+            filter: drop-shadow(0 0 15px #ffd700) drop-shadow(0 0 25px #ffa500);
+            z-index: 1000;
+        }
+
+        .gift-location-target {
+            position: fixed;
+            z-index: 999;
+            font-size: 1.5rem;
+            animation: targetPulse 0.8s ease-in-out infinite alternate;
+            pointer-events: none;
+        }
+
+        @keyframes targetPulse {
+            0% {
+                transform: scale(1) rotate(0deg);
+                opacity: 0.8;
+            }
+            100% {
+                transform: scale(1.3) rotate(10deg);
+                opacity: 1;
+                filter: drop-shadow(0 0 15px #ff6b6b);
+            }
+        }
+
+        @keyframes slideDown {
+            0% {
+                transform: translateX(-50%) translateY(-100px);
+                opacity: 0;
+            }
+            100% {
+                transform: translateX(-50%) translateY(0);
+                opacity: 1;
+            }
+        }
+
+        /* Santa Map Modal Styles */
+        .santa-map-modal {
+            position: fixed;
+            top: 0;
+            left: 0;
+            right: 0;
+            bottom: 0;
+            background: rgba(0, 0, 0, 0.8);
+            z-index: 10000;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            animation: fadeIn 0.3s ease-out;
+        }
+
+        .santa-map-container {
+            width: 90vw;
+            height: 80vh;
+            max-width: 1200px;
+            max-height: 800px;
+            background: white;
+            border-radius: 20px;
+            overflow: hidden;
+            position: relative;
+            box-shadow: 0 25px 50px rgba(0, 0, 0, 0.3);
+            animation: slideUp 0.4s cubic-bezier(0.68, -0.55, 0.265, 1.55);
+        }
+
+        .santa-map {
+            width: 100%;
+            height: 100%;
+            border-radius: 20px;
+        }
+
+        /* Santa Sleigh Animation */
+        .santa-sleigh {
+            position: absolute;
+            z-index: 1000;
+            font-size: 2rem;
+            pointer-events: none;
+            display: flex;
+            align-items: center;
+            animation: sleighFly 8s ease-in-out infinite;
+        }
+
+        .reindeer {
+            font-size: 1.5rem;
+            margin-right: 2px;
+            animation: reindeerBounce 1s ease-in-out infinite;
+        }
+
+        .reindeer:nth-child(1) { animation-delay: 0s; }
+        .reindeer:nth-child(2) { animation-delay: 0.1s; }
+        .reindeer:nth-child(3) { animation-delay: 0.2s; }
+        .reindeer:nth-child(4) { animation-delay: 0.3s; }
+
+        .santa-icon {
+            font-size: 2rem;
+            margin-left: 5px;
+            animation: santaBounce 1.2s ease-in-out infinite;
+        }
+
+        .sleigh-trail {
+            position: absolute;
+            font-size: 1rem;
+            pointer-events: none;
+            animation: trailSparkle 2s ease-out infinite;
+            z-index: 999;
+        }
+
+        /* Map Controls */
+        .map-controls {
+            position: absolute;
+            top: 20px;
+            right: 20px;
+            z-index: 1001;
+            display: flex;
+            gap: 10px;
+        }
+
+        .map-control-btn {
+            background: rgba(255, 255, 255, 0.95);
+            border: none;
+            border-radius: 8px;
+            padding: 10px;
+            font-size: 18px;
+            cursor: pointer;
+            box-shadow: 0 4px 12px rgba(0, 0, 0, 0.15);
+            transition: all 0.2s ease;
+        }
+
+        .map-control-btn:hover {
+            background: white;
+            transform: scale(1.05);
+        }
+
+        /* Keyframe Animations */
+        @keyframes fadeIn {
+            from { opacity: 0; }
+            to { opacity: 1; }
+        }
+
+        @keyframes slideUp {
+            from {
+                opacity: 0;
+                transform: translateY(100px) scale(0.9);
+            }
+            to {
+                opacity: 1;
+                transform: translateY(0) scale(1);
+            }
+        }
+
+        @keyframes sleighFly {
+            0% { transform: translateX(-100px) translateY(20px) rotate(-5deg); }
+            25% { transform: translateX(25%) translateY(-10px) rotate(2deg); }
+            50% { transform: translateX(50%) translateY(15px) rotate(-2deg); }
+            75% { transform: translateX(75%) translateY(-5px) rotate(1deg); }
+            100% { transform: translateX(calc(100% + 100px)) translateY(25px) rotate(-3deg); }
+        }
+
+        @keyframes reindeerBounce {
+            0%, 100% { transform: translateY(0) rotate(-2deg); }
+            50% { transform: translateY(-3px) rotate(2deg); }
+        }
+
+        @keyframes santaBounce {
+            0%, 100% { transform: translateY(0) scale(1); }
+            50% { transform: translateY(-2px) scale(1.05); }
+        }
+
+        @keyframes trailSparkle {
+            0% {
+                opacity: 1;
+                transform: scale(1) rotate(0deg);
+            }
+            100% {
+                opacity: 0;
+                transform: scale(0.3) rotate(180deg) translateX(-20px);
+            }
+        }
+
+        /* Map Marker Styles */
+        .santa-map-marker,
+        .user-map-marker {
+            font-size: 20px;
+            text-align: center;
+            line-height: 20px;
+            animation: markerBounce 2s ease-in-out infinite;
+        }
+
+        .santa-map-marker {
+            filter: drop-shadow(0 4px 8px rgba(220, 38, 38, 0.3));
+        }
+
+        .user-map-marker {
+            filter: drop-shadow(0 4px 8px rgba(5, 150, 105, 0.3));
+        }
+
+        @keyframes markerBounce {
+            0%, 100% { transform: translateY(0) scale(1); }
+            50% { transform: translateY(-5px) scale(1.1); }
+        }
+
+        /* Responsive optimizations for gift drops */
+        @media (max-width: 768px) {
+            .gift-drop,
+            .gift-drop.special,
+            .gift-drop.user-targeted {
+                font-size: 1.5rem; /* Smaller on mobile */
+            }
+
+            .gift-location-target {
+                font-size: 1.2rem; /* Smaller targeting indicators on mobile */
+            }
+
+            .gift-sparkle {
+                font-size: 0.8rem; /* Smaller sparkles on mobile */
+            }
+
+            .santa-map-container {
+                width: 95vw;
+                height: 85vh;
+            }
+
+            .santa-sleigh {
+                font-size: 1.5rem;
+            }
+
+            .reindeer {
+                font-size: 1.2rem;
+            }
+
+            .santa-icon {
+                font-size: 1.5rem;
+            }
+        }
+
+        @media (max-width: 480px) {
+            .gift-drop,
+            .gift-drop.special,
+            .gift-drop.user-targeted {
+                font-size: 1.2rem; /* Even smaller on very small screens */
+            }
+
+            .santa-map-container {
+                width: 98vw;
+                height: 90vh;
+            }
+
+            .map-controls {
+                top: 10px;
+                right: 10px;
+            }
+
+            .santa-sleigh {
+                font-size: 1.2rem;
+            }
+
+            .reindeer {
+                font-size: 1rem;
+            }
+
+            .santa-icon {
+                font-size: 1.2rem;
+            }
         }
 
         .gift-landed {
@@ -1531,10 +1804,275 @@
             );
         }
 
+        // Santa Map Modal Component
+        function SantaMapModal({ isVisible, onClose, santaStats, userLocation }) {
+            const mapRef = useRef(null);
+            const mapInstance = useRef(null);
+            const santaMarker = useRef(null);
+            const userMarker = useRef(null);
+            const sleighAnimation = useRef(null);
+
+            useEffect(() => {
+                if (isVisible && santaStats && !mapInstance.current) {
+                    // Initialize map with performance optimizations
+                    const map = L.map(mapRef.current, {
+                        zoomControl: true,
+                        scrollWheelZoom: true,
+                        doubleClickZoom: true,
+                        touchZoom: true,
+                        dragging: true,
+                        preferCanvas: true, // Better performance
+                        attributionControl: false // We'll add it manually
+                    }).setView([santaStats.santaLat, santaStats.santaLon], 4);
+
+                    // Add OpenStreetMap tiles with performance settings
+                    L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png', {
+                        maxZoom: 18,
+                        minZoom: 2,
+                        attribution: '© <a href="https://openstreetmap.org">OpenStreetMap</a> contributors',
+                        updateWhenIdle: true, // Better performance on mobile
+                        keepBuffer: 2, // Reduce memory usage
+                        maxNativeZoom: 18
+                    }).addTo(map);
+
+                    // Add attribution control
+                    L.control.attribution({position: 'bottomright', prefix: false}).addTo(map);
+
+                    mapInstance.current = map;
+                }
+
+                if (isVisible && mapInstance.current && santaStats) {
+                    updateMapMarkers();
+                    startSleighAnimation();
+                }
+
+                return () => {
+                    if (sleighAnimation.current) {
+                        clearInterval(sleighAnimation.current);
+                    }
+                };
+            }, [isVisible, santaStats, userLocation]);
+
+            const updateMapMarkers = () => {
+                if (!mapInstance.current || !santaStats) return;
+
+                const map = mapInstance.current;
+
+                // Remove existing markers
+                if (santaMarker.current) {
+                    map.removeLayer(santaMarker.current);
+                }
+                if (userMarker.current) {
+                    map.removeLayer(userMarker.current);
+                }
+
+                // Create custom Santa icon
+                const santaIcon = L.divIcon({
+                    html: '<div class="santa-map-marker">🎅</div>',
+                    className: 'custom-marker',
+                    iconSize: [40, 40],
+                    iconAnchor: [20, 20]
+                });
+
+                // Add Santa marker
+                santaMarker.current = L.marker([santaStats.santaLat, santaStats.santaLon], {
+                    icon: santaIcon
+                }).addTo(map)
+                .bindPopup(`
+                    <div style="text-align: center; padding: 10px;">
+                        <h3 style="margin: 0 0 8px 0; color: #dc2626;">🎅 Santa's Location</h3>
+                        <p style="margin: 4px 0; font-size: 14px;"><strong>Status:</strong> ${santaStats.status}</p>
+                        <p style="margin: 4px 0; font-size: 14px;"><strong>Coordinates:</strong> ${santaStats.santaLat.toFixed(2)}, ${santaStats.santaLon.toFixed(2)}</p>
+                        ${santaStats.giftsDelivered > 0 ? `<p style="margin: 4px 0; font-size: 14px;"><strong>Gifts Delivered:</strong> ${santaStats.giftsDelivered.toLocaleString()}</p>` : ''}
+                    </div>
+                `, {
+                    maxWidth: 250
+                });
+
+                // Add user marker if location is available
+                if (userLocation) {
+                    const userIcon = L.divIcon({
+                        html: '<div class="user-map-marker">📍</div>',
+                        className: 'custom-marker',
+                        iconSize: [30, 30],
+                        iconAnchor: [15, 15]
+                    });
+
+                    userMarker.current = L.marker([userLocation.lat, userLocation.lon], {
+                        icon: userIcon
+                    }).addTo(map)
+                    .bindPopup(`
+                        <div style="text-align: center; padding: 10px;">
+                            <h3 style="margin: 0 0 8px 0; color: #059669;">📍 Your Location</h3>
+                            <p style="margin: 4px 0; font-size: 14px;"><strong>Coordinates:</strong> ${userLocation.lat.toFixed(2)}, ${userLocation.lon.toFixed(2)}</p>
+                            ${santaStats.distance ? `<p style="margin: 4px 0; font-size: 14px;"><strong>Distance to Santa:</strong> ${santaStats.distance.toLocaleString()} km</p>` : ''}
+                        </div>
+                    `, {
+                        maxWidth: 250
+                    });
+                }
+
+                // Adjust view to show both markers
+                if (userLocation && santaStats.distance !== undefined) {
+                    const group = L.featureGroup([santaMarker.current, userMarker.current]);
+                    map.fitBounds(group.getBounds().pad(0.1));
+                } else {
+                    map.setView([santaStats.santaLat, santaStats.santaLon], 4);
+                }
+            };
+
+            const startSleighAnimation = () => {
+                if (sleighAnimation.current) {
+                    clearInterval(sleighAnimation.current);
+                }
+
+                const createSleighElement = () => {
+                    const mapContainer = mapRef.current;
+                    if (!mapContainer) return;
+
+                    const sleigh = document.createElement('div');
+                    sleigh.className = 'santa-sleigh';
+                    sleigh.innerHTML = `
+                        <span class="reindeer">🦌</span>
+                        <span class="reindeer">🦌</span>
+                        <span class="reindeer">🦌</span>
+                        <span class="reindeer">🦌</span>
+                        <span class="santa-icon">🛷</span>
+                    `;
+
+                    mapContainer.appendChild(sleigh);
+
+                    let trailCount = 0;
+                    const maxTrails = 15; // Limit trails for performance
+
+                    // Create trail effect with performance limits
+                    const createTrail = () => {
+                        if (trailCount >= maxTrails) return;
+
+                        trailCount++;
+                        const trail = document.createElement('div');
+                        trail.className = 'sleigh-trail';
+                        trail.innerHTML = '✨';
+                        trail.style.left = Math.random() * 30 + 35 + '%'; // Center area
+                        trail.style.top = Math.random() * 20 + 40 + '%';
+                        mapContainer.appendChild(trail);
+
+                        setTimeout(() => {
+                            if (trail.parentNode) {
+                                trail.parentNode.removeChild(trail);
+                                trailCount--;
+                            }
+                        }, 2000);
+                    };
+
+                    // Create trail every 250ms (slightly slower for performance)
+                    const trailInterval = setInterval(createTrail, 250);
+
+                    // Cleanup after animation
+                    setTimeout(() => {
+                        if (sleigh.parentNode) {
+                            sleigh.parentNode.removeChild(sleigh);
+                        }
+                        clearInterval(trailInterval);
+                        // Clean up any remaining trails
+                        const remainingTrails = mapContainer.querySelectorAll('.sleigh-trail');
+                        remainingTrails.forEach(trail => {
+                            if (trail.parentNode) {
+                                trail.parentNode.removeChild(trail);
+                            }
+                        });
+                        trailCount = 0;
+                    }, 8000);
+                };
+
+                // Start first animation after a short delay
+                setTimeout(createSleighElement, 500);
+
+                // Repeat animation every 15 seconds (slightly longer for performance)
+                sleighAnimation.current = setInterval(createSleighElement, 15000);
+            };
+
+            const handleClose = () => {
+                if (sleighAnimation.current) {
+                    clearInterval(sleighAnimation.current);
+                }
+                if (mapInstance.current) {
+                    mapInstance.current.remove();
+                    mapInstance.current = null;
+                }
+                onClose(false);
+            };
+
+            const handleMapClick = (e) => {
+                e.stopPropagation();
+            };
+
+            if (!isVisible) return null;
+
+            return (
+                <div className="santa-map-modal" onClick={handleClose}>
+                    <div className="santa-map-container" onClick={handleMapClick}>
+                        <div className="map-controls">
+                            <button
+                                className="map-control-btn"
+                                onClick={handleClose}
+                                title="Close Map"
+                            >
+                                ✕
+                            </button>
+                            <button
+                                className="map-control-btn"
+                                onClick={() => {
+                                    if (mapInstance.current && santaStats) {
+                                        mapInstance.current.setView([santaStats.santaLat, santaStats.santaLon], 6);
+                                    }
+                                }}
+                                title="Center on Santa"
+                            >
+                                🎅
+                            </button>
+                            {userLocation && (
+                                <button
+                                    className="map-control-btn"
+                                    onClick={() => {
+                                        if (mapInstance.current) {
+                                            mapInstance.current.setView([userLocation.lat, userLocation.lon], 8);
+                                        }
+                                    }}
+                                    title="Center on You"
+                                >
+                                    📍
+                                </button>
+                            )}
+                        </div>
+                        <div ref={mapRef} className="santa-map"></div>
+                        <div style={{
+                            position: 'absolute',
+                            bottom: '20px',
+                            left: '20px',
+                            background: 'rgba(255,255,255,0.9)',
+                            padding: '15px',
+                            borderRadius: '10px',
+                            fontSize: '14px',
+                            maxWidth: '300px'
+                        }}>
+                            <h4 style={{margin: '0 0 8px 0', color: '#dc2626'}}>🎄 Santa's Live Location</h4>
+                            <p style={{margin: '4px 0'}}><strong>Status:</strong> {santaStats?.status || 'Unknown'}</p>
+                            {santaStats?.distance && (
+                                <p style={{margin: '4px 0'}}><strong>Distance from you:</strong> {santaStats.distance.toLocaleString()} km</p>
+                            )}
+                            <p style={{margin: '4px 0', fontSize: '12px', opacity: '0.8'}}>Watch Santa fly across the map! ✨</p>
+                        </div>
+                    </div>
+                </div>
+            );
+        }
+
         function SantaTrackerEnhanced() {
             // Core state
             const [userLocation, setUserLocation] = useState(null);
             const [userLocationName, setUserLocationName] = useState('');
+            const [showSantaMap, setShowSantaMap] = useState(false);
             const [locationPermission, setLocationPermission] = useState('prompt');
             const [currentTime, setCurrentTime] = useState(new Date());
             const [santaStats, setSantaStats] = useState(null);
@@ -1840,15 +2378,20 @@
                 );
             };
 
-            const createGiftDrop = (isSpecial = false, customEmoji = null) => {
+            const createGiftDrop = (isSpecial = false, customEmoji = null, targetLocation = null) => {
                 const regularGifts = ['🎁', '🎀', '📦', '🧸', '🍪', '🎨', '📚', '⚽', '🎮', '🪀'];
                 const specialGifts = ['✨', '🌟', '💎', '👑', '🏆', '🎪', '🦄', '🌈'];
                 const christmasGifts = ['🎄', '❄️', '☃️', '🔔', '🕯️', '🎊', '🎉', '🎶'];
+                const locationGifts = ['🎯', '📍', '🏠', '🎊', '💝', '🌟', '⭐', '✨'];
 
                 let giftEmoji;
                 let giftType = 'normal';
 
-                if (customEmoji) {
+                // Special handling for location-targeted gifts
+                if (targetLocation && targetLocation.isUserLocation) {
+                    giftEmoji = customEmoji || locationGifts[Math.floor(Math.random() * locationGifts.length)];
+                    giftType = 'user-targeted';
+                } else if (customEmoji) {
                     giftEmoji = customEmoji;
                     giftType = 'custom';
                 } else if (isSpecial || Math.random() < 0.15) {
@@ -1863,41 +2406,100 @@
                     giftEmoji = regularGifts[Math.floor(Math.random() * regularGifts.length)];
                 }
 
-                const randomX = Math.random() * (window.innerWidth - 100);
+                // Calculate X position based on target location or random
+                let giftX;
+                if (targetLocation) {
+                    // Convert geo coordinates to screen position (simplified mapping)
+                    const screenCenterX = window.innerWidth / 2;
+                    const screenCenterY = window.innerHeight / 2;
+
+                    if (targetLocation.isUserLocation) {
+                        // Target user's area with some variation, responsive to screen size
+                        const isMobile = window.innerWidth <= 768;
+                        const areaPercentage = isMobile ? 0.3 : 0.2; // Larger area on mobile for better visibility
+                        const maxArea = isMobile ? 150 : 200; // Smaller max area on mobile
+                        const userArea = Math.min(window.innerWidth * areaPercentage, maxArea);
+                        giftX = screenCenterX + (Math.random() * userArea - userArea/2);
+                    } else {
+                        giftX = targetLocation.x || (Math.random() * (window.innerWidth - 100));
+                    }
+                } else {
+                    giftX = Math.random() * (window.innerWidth - 100);
+                }
+
+                // Ensure gift stays within screen bounds
+                giftX = Math.max(50, Math.min(window.innerWidth - 50, giftX));
+
                 const randomRotation = Math.random() * 360;
                 const randomDelay = Math.random() * 200; // Slight delay variation
 
                 const newGift = {
                     id: giftIdCounter.current++,
                     emoji: giftEmoji,
-                    x: randomX,
+                    x: giftX,
                     type: giftType,
                     rotation: randomRotation,
                     delay: randomDelay,
-                    createdAt: Date.now()
+                    createdAt: Date.now(),
+                    isUserTargeted: targetLocation && targetLocation.isUserLocation
                 };
 
-                setGifts(prev => [...prev, newGift]);
+                // Performance optimization: limit maximum gifts on screen
+                setGifts(prev => {
+                    const updatedGifts = [...prev, newGift];
+                    // Keep only the latest 20 gifts for performance
+                    return updatedGifts.length > 20 ? updatedGifts.slice(-20) : updatedGifts;
+                });
 
-                // Create sparkle effects for special gifts
-                if (giftType === 'special') {
-                    setTimeout(() => createSparkleEffect(randomX), randomDelay);
+                // Enhanced effects for user-targeted gifts
+                if (giftType === 'user-targeted') {
+                    setTimeout(() => createLocationTargetEffect(giftX), randomDelay);
+                    setTimeout(() => createSparkleEffect(giftX, true), randomDelay + 500);
+                } else if (giftType === 'special') {
+                    setTimeout(() => createSparkleEffect(giftX), randomDelay);
                 }
 
                 // Create trail effects for all gifts
-                setTimeout(() => createTrailEffect(randomX, giftEmoji), randomDelay + 500);
+                setTimeout(() => createTrailEffect(giftX, giftEmoji), randomDelay + 500);
 
-                // Remove gift after animation completes (longer for special gifts)
-                const animationDuration = giftType === 'special' ? 5500 : 4500;
+                // Remove gift after animation completes (longer for special and user-targeted gifts)
+                const animationDuration = (giftType === 'special' || giftType === 'user-targeted') ? 5500 : 4500;
                 setTimeout(() => {
                     setGifts(prev => prev.filter(g => g.id !== newGift.id));
                 }, animationDuration);
             };
 
-            const createSparkleEffect = (x) => {
-                const sparkleEmojis = ['✨', '⭐', '💫', '🌟'];
+            const createLocationTargetEffect = (x) => {
+                // Create a targeting indicator before the gift drops
+                const targetIndicators = ['🎯', '📍', '🎪'];
 
-                for (let i = 0; i < 3; i++) {
+                for (let i = 0; i < 2; i++) {
+                    setTimeout(() => {
+                        const indicator = {
+                            id: giftIdCounter.current++,
+                            emoji: targetIndicators[Math.floor(Math.random() * targetIndicators.length)],
+                            x: x + (Math.random() * 40 - 20), // Small spread
+                            type: 'location-target',
+                            createdAt: Date.now()
+                        };
+
+                        setGifts(prev => [...prev, indicator]);
+
+                        setTimeout(() => {
+                            setGifts(prev => prev.filter(g => g.id !== indicator.id));
+                        }, 800);
+                    }, i * 100);
+                }
+            };
+
+            const createSparkleEffect = (x, enhanced = false) => {
+                const sparkleEmojis = enhanced ?
+                    ['✨', '⭐', '💫', '🌟', '🎊', '🎉', '💝'] :
+                    ['✨', '⭐', '💫', '🌟'];
+
+                const sparkleCount = enhanced ? 5 : 3;
+
+                for (let i = 0; i < sparkleCount; i++) {
                     setTimeout(() => {
                         const sparkle = {
                             id: giftIdCounter.current++,
@@ -1940,6 +2542,56 @@
                         createGiftDrop(isSpecial);
                     }, i * 300); // Slightly faster succession
                 }
+            };
+
+            // New function for location-based gift drops
+            const createUserLocationGiftDrop = (customEmoji = null) => {
+                if (!userLocation) {
+                    // Fallback to regular gift drop if no location
+                    createGiftDrop(true, customEmoji);
+                    return;
+                }
+
+                const locationTarget = {
+                    isUserLocation: true,
+                    lat: userLocation.lat,
+                    lon: userLocation.lon
+                };
+
+                createGiftDrop(false, customEmoji, locationTarget);
+
+                // Show a special message about the targeted gift
+                // Create responsive notification
+                const isMobile = window.innerWidth <= 768;
+                const messageEl = document.createElement('div');
+                messageEl.innerHTML = `
+                    <div style="
+                        position: fixed;
+                        top: ${isMobile ? '10px' : '20px'};
+                        left: 50%;
+                        transform: translateX(-50%);
+                        background: linear-gradient(135deg, #ff6b6b, #ffa500);
+                        color: white;
+                        padding: ${isMobile ? '12px 20px' : '15px 25px'};
+                        border-radius: 25px;
+                        font-size: ${isMobile ? '14px' : '16px'};
+                        font-weight: bold;
+                        z-index: 10000;
+                        box-shadow: 0 8px 32px rgba(0,0,0,0.3);
+                        animation: slideDown 0.6s cubic-bezier(0.68, -0.55, 0.265, 1.55);
+                        max-width: ${isMobile ? '90vw' : '400px'};
+                        text-align: center;
+                    ">
+                        🎯 ${window.languageManager.t('giftDrop.targetedDelivery') || 'Special delivery headed your way!'} 🎁
+                    </div>
+                `;
+
+                document.body.appendChild(messageEl);
+                setTimeout(() => {
+                    if (messageEl.parentNode) {
+                        messageEl.remove();
+                    }
+                }, 3000);
             };
 
             const createGiftShower = () => {
@@ -2237,8 +2889,13 @@
 
                             setLocationPermission('granted');
 
-                            // Play gift drop sound when location is successfully obtained
+                            // Play gift drop sound and create a welcome location-targeted gift
                             soundManager.playGiftDrop();
+
+                            // Create a special welcome gift targeted at the user's location
+                            setTimeout(() => {
+                                createUserLocationGiftDrop('🎯'); // Special targeting emoji for first location gift
+                            }, 1000);
                         },
                         (error) => {
                             console.error('Location error:', error);
@@ -2548,8 +3205,12 @@ ${context}
                     // Play ho ho ho sound when message is successfully generated
                     soundManager.playHoHoHo();
 
-                    // Drop a special gift when message is generated
-                    createGiftDrop(Math.random() < 0.3); // 30% chance for special gift
+                    // Drop a location-targeted gift when user has location, otherwise regular gift
+                    if (userLocation && Math.random() < 0.7) { // 70% chance for location-targeted gift when location is available
+                        createUserLocationGiftDrop();
+                    } else {
+                        createGiftDrop(Math.random() < 0.3); // 30% chance for special gift
+                    }
 
                     console.log('✅ Santa message generated successfully');
 
@@ -2851,6 +3512,16 @@ ${context}
                                     )}
                                 </div>
 
+                                {/* Show on Map Button */}
+                                <div className="text-center mb-4">
+                                    <button
+                                        onClick={() => setShowSantaMap(true)}
+                                        className="bg-gradient-to-r from-purple-500 to-indigo-600 hover:from-purple-600 hover:to-indigo-700 text-white font-bold py-3 px-8 rounded-full transition-all transform hover:scale-105 shadow-lg"
+                                    >
+                                        🗺️ {window.languageManager.t('button.showOnMap') || 'Show Santa on Map'}
+                                    </button>
+                                </div>
+
                                 {userLocation && (
                                     <div className="bg-blue-50 rounded-xl p-4 text-center">
                                         <p className="text-gray-700">
@@ -2965,16 +3636,27 @@ ${context}
                                     <p className="text-sm text-gray-600 mb-3">
                                         {window.languageManager.t('santaMessage.subtitle')}
                                     </p>
-                                    <button
-                                        onClick={getSantaMessage}
-                                        disabled={loadingMessage}
-                                        className="bg-gradient-to-r from-red-600 to-red-700 hover:from-red-700 hover:to-red-800 text-white font-bold py-3 px-6 rounded-full transition-all transform hover:scale-105 shadow-lg disabled:opacity-50 disabled:cursor-not-allowed"
-                                    >
-                                        {loadingMessage
-                                            ? window.languageManager.t('ai.generating')
-                                            : window.languageManager.t('button.getSantaMessage')
-                                        }
-                                    </button>
+                                    <div className="flex flex-col sm:flex-row gap-3 justify-center">
+                                        <button
+                                            onClick={getSantaMessage}
+                                            disabled={loadingMessage}
+                                            className="bg-gradient-to-r from-red-600 to-red-700 hover:from-red-700 hover:to-red-800 text-white font-bold py-3 px-6 rounded-full transition-all transform hover:scale-105 shadow-lg disabled:opacity-50 disabled:cursor-not-allowed"
+                                        >
+                                            {loadingMessage
+                                                ? window.languageManager.t('ai.generating')
+                                                : window.languageManager.t('button.getSantaMessage')
+                                            }
+                                        </button>
+
+                                        {userLocation && (
+                                            <button
+                                                onClick={() => createUserLocationGiftDrop()}
+                                                className="bg-gradient-to-r from-orange-500 to-red-600 hover:from-orange-600 hover:to-red-700 text-white font-bold py-3 px-6 rounded-full transition-all transform hover:scale-105 shadow-lg"
+                                            >
+                                                🎯 {window.languageManager.t('button.specialDelivery') || 'Special Delivery'}
+                                            </button>
+                                        )}
+                                    </div>
                                 </div>
 
                                 {santaMessage && (
@@ -3035,6 +3717,10 @@ ${context}
                             switch (type) {
                                 case 'special':
                                     return 'gift-drop special magical-shimmer';
+                                case 'user-targeted':
+                                    return 'gift-drop user-targeted magical-shimmer';
+                                case 'location-target':
+                                    return 'gift-location-target';
                                 case 'sparkle':
                                     return 'gift-sparkle';
                                 case 'trail':
@@ -3134,6 +3820,14 @@ ${context}
                         currentLanguage={currentLanguage}
                         newName={newNaughtyName}
                         setNewName={setNewNaughtyName}
+                    />
+
+                    {/* Santa Map Modal */}
+                    <SantaMapModal
+                        isVisible={showSantaMap}
+                        onClose={setShowSantaMap}
+                        santaStats={santaStats}
+                        userLocation={userLocation}
                     />
 
                 </div>
