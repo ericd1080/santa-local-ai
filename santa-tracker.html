@@ -437,7 +437,13 @@
                 if (currentLanguage === 'ko') {
                     // Korean Santa prompts with EXAMPLES - Show don't tell approach
                     const koreanPrompts = {
-                        preparing: `시스템: 당신은 순수 한국어로만 말하는 산타클로스입니다. 절대로 일본어, 중국어, 베트남어, 태국어, 러시아어, 영어 등 다른 언어를 섞지 마세요.
+                        preparing: `당신은 산타클로스입니다. 크리스마스 이브를 위해 북극에서 준비하고 있는 상황에 대해 따뜻하고 즐거운 한국어 메시지를 2-3문장으로 작성해주세요.`,
+                        delivering: `당신은 산타클로스입니다. 지금 전세계에 선물을 배달하고 있는 상황에 대해 따뜻하고 즐거운 한국어 메시지를 2-3문장으로 작성해주세요. ${fullContext.DISTANCE_CONTEXT || ''} ${fullContext.GIFTS_CONTEXT || ''}`,
+                        finished: `당신은 산타클로스입니다. 크리스마스 선물 배달을 마치고 순록들과 함께 북극에서 쉬고 있는 상황에 대해 따뜻하고 즐거운 한국어 메시지를 2-3문장으로 작성해주세요.`
+                    };
+                    return koreanPrompts[promptType] || koreanPrompts.preparing;
+                } else {
+                    // English Santa prompts (existing) - TEMPORARY HACK - DELETE THE REST
 
 좋은 예시 (오직 한국어):
 "호호호! 북극에서 크리스마스 이브 준비가 한창입니다. 엘프들이 선물 포장하느라 바쁘게 움직이고 있어요!"
