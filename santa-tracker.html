@@ -1975,14 +1975,13 @@
                                     console.warn(`⚠️ Tile error from ${provider.name} (${tileErrorCount} errors so far)`);
 
                                     // If we get many errors and haven't loaded many tiles, try next provider
-                                    if (tileErrorCount > 3 && tileLoadCount === 0 && currentProviderIndex < tileProviders.length - 1) {
+                                    if (tileErrorCount > 3 && tileLoadCount === 0 && providerIndex < tileProviders.length - 1) {
                                         console.log('🔄 Too many tile errors, switching provider...');
-                                        currentProviderIndex++;
                                         loadAttempts++;
 
                                         setTimeout(() => {
                                             map.removeLayer(layer);
-                                            const fallbackLayer = createTileLayer(currentProviderIndex);
+                                            const fallbackLayer = createTileLayer(providerIndex + 1);
                                             if (fallbackLayer) {
                                                 fallbackLayer.addTo(map);
                                             }
